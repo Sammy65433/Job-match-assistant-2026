@@ -1,6 +1,7 @@
+New App idea:
 Job match assistant 
 
-You could build this as a **job-match assistant** first, then add application automation where employers explicitly allow it. That gives you a useful app without risking inaccurate applications or violating job-board rules.
+Building this as a **job-match assistant**, then add application automation where employers explicitly allow it. That gives you a useful app without risking inaccurate applications or violating job-board rules.
 
 A practical first version would:
 
