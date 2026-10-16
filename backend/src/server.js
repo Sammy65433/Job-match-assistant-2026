@@ -5,10 +5,10 @@ import mongoose from "mongoose";
 import { jobs } from "../data/jobs.js";
 import { matchJob } from "./match.js";
 import SavedJob from "./models/SavedJob.js";
-import {
-  getRemotiveJobs,
-  selectRemotiveJobs
-} from "./remotive.js";
+import { discoverRemoteJobs } from "./discover.js";
+import { searchAdzunaAudioJobs } from "./adzuna.js";
+
+
 
 const app = express();
 const port = Number(process.env.PORT) || 5003;
@@ -153,28 +153,43 @@ app.post("/api/saved-jobs", async (req, res) => {
     res.status(500).json({ error: "Could not save job." });
   }
 });
-app.get("/api/discover/remotive", async (req, res) => {
+app.get("/api/discover/remote", async (req, res) => {
   const { track } = req.query;
 
   if (track !== "software" && track !== "data") {
+    return res.status(400).json({ error: "Choose the software or data track." });
+  } // end if invalid track
+
+  try {
+    const { jobs: found, errors } = await discoverRemoteJobs(track);
+    res.json({ track, jobs: found, errors });
+  } catch (error) {
+    console.error("Could not discover remote jobs:", error);
+    res.status(502).json({ error: "Could not fetch job listings." });
+  } // end try/catch
+}); // end route
+
+app.get("/api/discover/audio", async (req, res) => {
+  const { area } = req.query;
+
+  if (!["los_angeles", "newark"].includes(area)) {
     return res.status(400).json({
-      error: "Choose the software or data track."
+      error: "Choose los_angeles or newark."
     });
   }
 
   try {
-    const allJobs = await getRemotiveJobs();
-    const jobs = selectRemotiveJobs(allJobs, track);
+    const jobs = await searchAdzunaAudioJobs(area);
 
     res.json({
-      source: "Remotive",
-      track,
-      attribution: "Listings provided by Remotive. Open each job on Remotive.",
+      source: "Adzuna",
+      area,
+      attribution: "Open each listing using its Adzuna redirect link.",
       jobs
     });
   } catch (error) {
-    console.error("Could not fetch Remotive jobs:", error);
-    res.status(502).json({ error: "Could not fetch job listings." });
+    console.error("Could not search Adzuna audio jobs:", error.message);
+    res.status(502).json({ error: "Could not fetch audio jobs." });
   }
 });
 

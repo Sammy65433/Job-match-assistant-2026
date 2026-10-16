@@ -1,31 +1,10 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import { TRACKS, parseSkills } from "./tracks.js";
+import RemoteJobs from "./RemoteJobs.jsx";
+
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5003";
-
-const TRACKS = {
-  software: {
-    label: "Software engineer",
-    defaultSkills:
-      "JavaScript, React, HTML, CSS, Git, Node.js, Express, MongoDB, SQL, Python, REST APIs"
-  },
-  data: {
-    label: "Data analyst",
-    defaultSkills:
-      "Python, SQL, Excel, Tableau, Power BI, ETL, Data Analysis, Data Visualization, Data Modeling, SQLite"
-  },
-  audio: {
-    label: "Audio engineer",
-    defaultSkills:
-      "Pro Tools, Logic Pro, Ableton Live, Audio Recording, Vocal Tracking, Audio Editing, Vocal Production, Microphone Placement, Signal Flow, Studio Sessions"
-  }
-};
-
-const parseSkills = (text) =>
-  text
-    .split(",")
-    .map((skill) => skill.trim())
-    .filter(Boolean);
 
 function App() {
   const [track, setTrack] = useState("software");
@@ -49,6 +28,7 @@ function App() {
   const [customMatch, setCustomMatch] = useState(null);
   const [savedJobs, setSavedJobs] = useState([]);
   const [remoteJobs, setRemoteJobs] = useState([]);
+  const [remoteWarnings, setRemoteWarnings] = useState([]);
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteError, setRemoteError] = useState("");
   const [remoteSearched, setRemoteSearched] = useState(false);
@@ -78,37 +58,38 @@ function App() {
 
         if (!response.ok) {
           throw new Error(data.error || "Could not load saved jobs.");
-        }
+        } // end if not ok
 
         if (!cancelled) {
           setSavedJobs(data.savedJobs);
-        }
+        } // end if not cancelled
       } catch (err) {
         if (!cancelled) {
           setSavedJobs([]);
           setError(err.message);
-        }
-      }
-    }
+        } // end if not cancelled
+      } // end try/catch
+    } // end loadSavedJobs
 
     loadSavedJobs();
 
     return () => {
       cancelled = true;
-    };
-  }, [track]);
+    }; // end cleanup
+  }, [track]); // end useEffect
 
   function changeTrack(nextTrack) {
-  setTrack(nextTrack);
-  setMatches([]);
-  setCustomMatch(null);
-  setSavedJobs([]);
-  setRemoteJobs([]);
-  setRemoteSearched(false);
-  setRemoteError("");
-  setHasSearched(false);
-  setError("");
-}
+    setTrack(nextTrack);
+    setMatches([]);
+    setCustomMatch(null);
+    setSavedJobs([]);
+    setRemoteJobs([]);
+    setRemoteWarnings([]);
+    setRemoteSearched(false);
+    setRemoteError("");
+    setHasSearched(false);
+    setError("");
+  } // end changeTrack
 
   async function request(path, options) {
     const response = await fetch(`${API_URL}${path}`, options);
@@ -116,10 +97,10 @@ function App() {
 
     if (!response.ok) {
       throw new Error(data.error || "Request failed.");
-    }
+    } // end if not ok
 
     return data;
-  }
+  } // end request
 
   const post = (path, body) =>
     request(path, {
@@ -129,25 +110,28 @@ function App() {
     });
 
   async function loadRemoteJobs() {
-  if (track === "audio") return;
+    if (track === "audio") return;
 
-  setRemoteLoading(true);
-  setRemoteError("");
-  setRemoteJobs([]);
-  setRemoteSearched(false);
+    setRemoteLoading(true);
+    setRemoteError("");
+    setRemoteJobs([]);
+    setRemoteWarnings([]);
+    setRemoteSearched(false);
 
-  try {
-    const data = await request(
-      `/api/discover/remotive?track=${encodeURIComponent(track)}`
-    );
-    setRemoteJobs(Array.isArray(data.jobs) ? data.jobs : []);
-  } catch (err) {
-    setRemoteError(err.message);
-  } finally {
-    setRemoteLoading(false);
-    setRemoteSearched(true);
-  }
-}
+    try {
+      const data = await request(
+        `/api/discover/remote?track=${encodeURIComponent(track)}`
+      );
+      console.log("Remote jobs response:", data); // CHECK 2
+      setRemoteJobs(Array.isArray(data.jobs) ? data.jobs : []);
+      setRemoteWarnings(Array.isArray(data.errors) ? data.errors : []);
+    } catch (err) {
+      setRemoteError(err.message);
+    } finally {
+      setRemoteLoading(false);
+      setRemoteSearched(true);
+    } // end try/catch/finally
+  } // end loadRemoteJobs
 
   async function findMatches(event) {
     event.preventDefault();
@@ -157,7 +141,7 @@ function App() {
     if (!skills.length) {
       setError("Enter at least one skill.");
       return;
-    }
+    } // end if no skills
 
     setLoading(true);
     setError("");
@@ -170,8 +154,8 @@ function App() {
       setError(err.message);
     } finally {
       setLoading(false);
-    }
-  }
+    } // end try/catch/finally
+  } // end findMatches
 
   async function previewCustomJob(event) {
     event.preventDefault();
@@ -182,7 +166,7 @@ function App() {
     if (!skills.length || !requiredSkills.length) {
       setError("Enter your skills and the job's required skills.");
       return;
-    }
+    } // end if missing skills
 
     setLoading(true);
     setError("");
@@ -200,17 +184,21 @@ function App() {
       setError(err.message);
     } finally {
       setLoading(false);
-    }
-  }
+    } // end try/catch/finally
+  } // end previewCustomJob
 
   async function saveJob() {
     const requiredSkills = parseSkills(requiredSkillText);
 
-    if (!title.trim() || !company.trim() || !description.trim() ||
-      !requiredSkills.length) {
+    if (
+      !title.trim() ||
+      !company.trim() ||
+      !description.trim() ||
+      !requiredSkills.length
+    ) {
       setError("Complete the pasted-job form before saving.");
       return;
-    }
+    } // end if form incomplete
 
     setSaving(true);
     setError("");
@@ -234,8 +222,8 @@ function App() {
       setError(err.message);
     } finally {
       setSaving(false);
-    }
-  }
+    } // end try/catch/finally
+  } // end saveJob
 
   const visibleMatches = matches.filter((job) => {
     if (remoteOnly && !job.remote) return false;
@@ -244,9 +232,9 @@ function App() {
       (job.salaryMin == null || job.salaryMin < Number(minimumSalary))
     ) {
       return false;
-    }
+    } // end if salary too low
     return true;
-  });
+  }); // end filter
 
   const reviewQueue = visibleMatches.filter((job) => job.inReviewQueue);
 
@@ -281,7 +269,7 @@ function App() {
         )}
       </article>
     );
-  }
+  } // end renderJob
 
   return (
     <main className="page">
@@ -295,9 +283,7 @@ function App() {
       <select
         id="career-track"
         value={track}
-        onChange={(event) => changeTrack(event.target.value
-          
-        )}
+        onChange={(event) => changeTrack(event.target.value)}
       >
         {Object.entries(TRACKS).map(([id, option]) => (
           <option key={id} value={id}>{option.label}</option>
@@ -420,60 +406,20 @@ function App() {
 
         {customMatch && renderJob(customMatch)}
 
-        <button
-          type="button"
-          onClick={saveJob}
-          disabled={saving}
-        >
+        <button type="button" onClick={saveJob} disabled={saving}>
           {saving ? "Saving..." : "Save pasted job"}
         </button>
       </section>
-      <section aria-label="Remote job listings">
-        <h2>Remote jobs from Remotive</h2>
-        <p>
-          Live listings for exploration, not qualification matches. Open a
-          listing on Remotive to review its full requirements and location
-          restrictions.
-        </p>
 
-        {track === "audio" ? (
-          <p>
-            Remotive is a remote-job source and may not cover the local
-            studio and audio roles you want. Pasted jobs remain available
-            for this track.
-          </p>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={loadRemoteJobs}
-              disabled={remoteLoading}
-            >
-              {remoteLoading ? "Loading..." : "Load remote jobs"}
-            </button>
-
-            {remoteError && <p role="alert" className="error">{remoteError}</p>}
-
-            {remoteSearched && !remoteLoading && !remoteError && remoteJobs.length === 0 && (
-              <p>No listings matched this track in the current Remotive results.</p>
-            )}
-
-            {remoteJobs.map((job) => (
-              <article key={job.id} className="job">
-                <h3>{job.title} · {job.company}</h3>
-                <p>{job.location || "Location restrictions not specified"}</p>
-                <p>
-                  Source: Remotive ·{" "}
-                  <a href={job.url} target="_blank" rel="noopener noreferrer">
-                    View job on Remotive
-                  </a>
-                </p>
-              </article>
-            ))}
-
-          </>
-        )}
-      </section>
+      <RemoteJobs
+  track={track}
+  jobs={remoteJobs}
+  warnings={remoteWarnings}
+  loading={remoteLoading}
+  error={remoteError}
+  searched={remoteSearched}
+  onLoad={loadRemoteJobs}
+/>
 
 
       <section aria-label="Saved jobs">
@@ -512,6 +458,6 @@ function App() {
       </section>
     </main>
   );
-}
+} // end App
 
 export default App;

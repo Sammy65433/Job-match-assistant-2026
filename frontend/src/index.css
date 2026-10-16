@@ -1,8 +1,38 @@
+/* ---------- Colors live here. Change these to re-theme the app. ---------- */
+:root {
+  color-scheme: dark;
+
+  --bg: #070b14;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+  --border: rgba(148, 163, 184, 0.2);
+  --text: #e6edf7;
+  --muted: #94a3b8;
+
+  --cyan: #22d3ee;
+  --violet: #a78bfa;
+  --danger: #fb7185;
+  --success: #34d399;
+
+  --radius: 16px;
+} /* end :root */
+
 * {
   box-sizing: border-box;
-}
+} /* end * */
+
+html {
+  scroll-behavior: smooth;
+} /* end html */
 
 body {
   margin: 0;
-  background: #f8fafc;
-}
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(900px 500px at 10% -10%, rgba(167, 139, 250, 0.2), transparent 60%),
+    radial-gradient(800px 500px at 100% 0%, rgba(34, 211, 238, 0.15), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+} /* end body */
