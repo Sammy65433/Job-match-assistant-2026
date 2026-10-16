@@ -30,8 +30,16 @@ body {
   min-height: 100vh;
   color: var(--text);
   background:
-    radial-gradient(900px 500px at 10% -10%, rgba(167, 139, 250, 0.2), transparent 60%),
-    radial-gradient(800px 500px at 100% 0%, rgba(34, 211, 238, 0.15), transparent 60%),
+    radial-gradient(
+      900px 500px at 10% -10%,
+      rgba(167, 139, 250, 0.2),
+      transparent 60%
+    ),
+    radial-gradient(
+      800px 500px at 100% 0%,
+      rgba(34, 211, 238, 0.15),
+      transparent 60%
+    ),
     var(--bg);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;

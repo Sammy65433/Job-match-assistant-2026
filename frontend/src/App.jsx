@@ -3,26 +3,35 @@ import "./App.css";
 import { TRACKS, parseSkills } from "./tracks.js";
 import RemoteJobs from "./RemoteJobs.jsx";
 import AudioJobs from "./AudioJobs.jsx";
-
+import ResumeComparison from "./ResumeComparison.jsx";
+import ResumeJobCheck from "./ResumeJobCheck.jsx";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5003";
+
+const STATUS_LABELS = {
+  saved: "Saved",
+  ready: "Ready to apply",
+  applied: "Applied (marked by me)",
+  interview: "Interview",
+  rejected: "Closed / rejected",
+}; // end STATUS_LABELS
 
 function App() {
   const [track, setTrack] = useState("software");
   const [skillsByTrack, setSkillsByTrack] = useState({
     software: TRACKS.software.defaultSkills,
     data: TRACKS.data.defaultSkills,
-    audio: TRACKS.audio.defaultSkills
+    audio: TRACKS.audio.defaultSkills,
   });
   const [remoteOnlyByTrack, setRemoteOnlyByTrack] = useState({
     software: true,
     data: true,
-    audio: false
+    audio: false,
   });
   const [minimumSalaryByTrack, setMinimumSalaryByTrack] = useState({
     software: "",
     data: "",
-    audio: ""
+    audio: "",
   });
 
   const [matches, setMatches] = useState([]);
@@ -46,6 +55,11 @@ function App() {
   const skillText = skillsByTrack[track];
   const remoteOnly = remoteOnlyByTrack[track];
   const minimumSalary = minimumSalaryByTrack[track];
+  const [resumeTextByTrack, setResumeTextByTrack] = useState({
+    software: "",
+    data: "",
+    audio: "",
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +67,7 @@ function App() {
     async function loadSavedJobs() {
       try {
         const response = await fetch(
-          `${API_URL}/api/saved-jobs?track=${encodeURIComponent(track)}`
+          `${API_URL}/api/saved-jobs?track=${encodeURIComponent(track)}`,
         );
         const data = await response.json();
 
@@ -107,7 +121,7 @@ function App() {
     request(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
   async function loadRemoteJobs() {
@@ -121,9 +135,8 @@ function App() {
 
     try {
       const data = await request(
-        `/api/discover/remote?track=${encodeURIComponent(track)}`
+        `/api/discover/remote?track=${encodeURIComponent(track)}`,
       );
-      console.log("Remote jobs response:", data); // CHECK 2
       setRemoteJobs(Array.isArray(data.jobs) ? data.jobs : []);
       setRemoteWarnings(Array.isArray(data.errors) ? data.errors : []);
     } catch (err) {
@@ -178,7 +191,7 @@ function App() {
         title,
         company,
         description,
-        requiredSkills
+        requiredSkills,
       });
       setCustomMatch(data.match);
     } catch (err) {
@@ -210,7 +223,7 @@ function App() {
         title,
         company,
         description,
-        requiredSkills
+        requiredSkills,
       });
 
       setSavedJobs((current) => [data.savedJob, ...current]);
@@ -225,6 +238,24 @@ function App() {
       setSaving(false);
     } // end try/catch/finally
   } // end saveJob
+
+  async function updateStatus(jobId, status) {
+    setError("");
+
+    try {
+      const data = await request(`/api/saved-jobs/${jobId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+
+      setSavedJobs((current) =>
+        current.map((job) => (job._id === jobId ? data.savedJob : job)),
+      ); // end map
+    } catch (err) {
+      setError(err.message);
+    } // end try/catch
+  } // end updateStatus
 
   const visibleMatches = matches.filter((job) => {
     if (remoteOnly && !job.remote) return false;
@@ -242,7 +273,9 @@ function App() {
   function renderJob(job) {
     return (
       <article key={job.id} className="job">
-        <h3>{job.title} · {job.company}</h3>
+        <h3>
+          {job.title} · {job.company}
+        </h3>
         <p>
           <strong>{job.score}% skill match</strong> · {job.location}
           {job.salaryMin != null && (
@@ -251,23 +284,19 @@ function App() {
               {job.salaryMin.toLocaleString("en-US", {
                 style: "currency",
                 currency: "USD",
-                maximumFractionDigits: 0
+                maximumFractionDigits: 0,
               })}
             </>
           )}
         </p>
         <p>{job.explanation}</p>
         <p>
-          <strong>Matched:</strong>{" "}
-          {job.matchedSkills.join(", ") || "None"}
+          <strong>Matched:</strong> {job.matchedSkills.join(", ") || "None"}
         </p>
         <p>
-          <strong>Missing:</strong>{" "}
-          {job.missingSkills.join(", ") || "None"}
+          <strong>Missing:</strong> {job.missingSkills.join(", ") || "None"}
         </p>
-        {job.inReviewQueue && (
-          <span className="badge">Review queue</span>
-        )}
+        {job.inReviewQueue && <span className="badge">Review queue</span>}
       </article>
     );
   } // end renderJob
@@ -276,8 +305,8 @@ function App() {
     <main className="page">
       <h1>Job Match Assistant</h1>
       <p>
-        Compare skills with sample or pasted jobs. Scores are estimates,
-        not proof of qualification.
+        Compare skills with sample or pasted jobs. Scores are estimates, not
+        proof of qualification.
       </p>
 
       <label htmlFor="career-track">Career track</label>
@@ -287,7 +316,9 @@ function App() {
         onChange={(event) => changeTrack(event.target.value)}
       >
         {Object.entries(TRACKS).map(([id, option]) => (
-          <option key={id} value={id}>{option.label}</option>
+          <option key={id} value={id}>
+            {option.label}
+          </option>
         ))}
       </select>
 
@@ -302,7 +333,7 @@ function App() {
           onChange={(event) =>
             setSkillsByTrack((current) => ({
               ...current,
-              [track]: event.target.value
+              [track]: event.target.value,
             }))
           }
         />
@@ -314,7 +345,7 @@ function App() {
             onChange={(event) =>
               setRemoteOnlyByTrack((current) => ({
                 ...current,
-                [track]: event.target.checked
+                [track]: event.target.checked,
               }))
             }
           />
@@ -331,7 +362,7 @@ function App() {
           onChange={(event) =>
             setMinimumSalaryByTrack((current) => ({
               ...current,
-              [track]: event.target.value
+              [track]: event.target.value,
             }))
           }
         />
@@ -341,7 +372,11 @@ function App() {
         </button>
       </form>
 
-      {error && <p role="alert" className="error">{error}</p>}
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
 
       {hasSearched && (
         <section aria-label="Sample job matches">
@@ -359,8 +394,8 @@ function App() {
       <section aria-label="Custom job preview">
         <h2>Preview a pasted job</h2>
         <p>
-          Enter the required skills yourself. The description is for
-          context only and is not automatically scored.
+          Enter the required skills yourself. The description is for context
+          only and is not automatically scored.
         </p>
 
         <form onSubmit={previewCustomJob}>
@@ -411,6 +446,7 @@ function App() {
           {saving ? "Saving..." : "Save pasted job"}
         </button>
       </section>
+
       {track === "audio" ? (
         <AudioJobs request={request} />
       ) : (
@@ -425,6 +461,19 @@ function App() {
         />
       )}
 
+      <ResumeComparison
+        key={track}
+        trackId={track}
+        trackLabel={TRACKS[track].label}
+        request={request}
+        resumeText={resumeTextByTrack[track]}
+        onResumeTextChange={(text) =>
+          setResumeTextByTrack((current) => ({
+            ...current,
+            [track]: text,
+          }))
+        }
+      />
 
       <section aria-label="Saved jobs">
         <h2>Saved jobs: {TRACKS[track].label}</h2>
@@ -434,28 +483,58 @@ function App() {
           const skillMatch = parseSkills(skillText);
           const matched = job.requiredSkills.filter((required) =>
             skillMatch.some(
-              (skill) => skill.toLowerCase() === required.toLowerCase()
-            )
+              (skill) => skill.toLowerCase() === required.toLowerCase(),
+            ),
           );
           const score = Math.round(
-            (matched.length / job.requiredSkills.length) * 100
+            (matched.length / job.requiredSkills.length) * 100,
           );
 
           return (
             <article key={job._id} className="job">
-              <h3>{job.title} · {job.company}</h3>
+              <h3>
+                {job.title} · {job.company}
+              </h3>
               <p>
                 <strong>{score}% skill match</strong>
                 {score >= 60 && " · Review queue"}
               </p>
               <p>{job.description}</p>
-              <p><strong>Required:</strong> {job.requiredSkills.join(", ")}</p>
+              <p>
+                <strong>Required:</strong> {job.requiredSkills.join(", ")}
+              </p>
               <p>
                 <strong>Missing:</strong>{" "}
                 {job.requiredSkills
                   .filter((required) => !matched.includes(required))
                   .join(", ") || "None"}
               </p>
+
+              <label htmlFor={`status-${job._id}`}>Application status</label>
+              <select
+                id={`status-${job._id}`}
+                value={job.status || "saved"}
+                onChange={(event) => updateStatus(job._id, event.target.value)}
+              >
+                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+
+              {job.appliedAt && (
+                <p>
+                  Marked applied on{" "}
+                  {new Date(job.appliedAt).toLocaleDateString()}
+                </p>
+              )}
+              <ResumeJobCheck
+                job={job}
+                resumeText={resumeTextByTrack[track]}
+                skillText={skillText}
+                request={request}
+              />
             </article>
           );
         })}

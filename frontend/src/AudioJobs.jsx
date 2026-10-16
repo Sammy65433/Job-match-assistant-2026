@@ -2,22 +2,22 @@ import { useState } from "react";
 
 const AREAS = {
   los_angeles: "Los Angeles area",
-  newark: "Newark / NYC area"
+  newark: "Newark / NYC area",
 };
 
 const GROUPS = [
   {
     id: "likely-related",
-    title: "Likely related to audio production"
+    title: "Likely related to audio production",
   },
   {
     id: "review",
-    title: "Audio-related, review full listing"
+    title: "Audio-related, review full listing",
   },
   {
     id: "other",
-    title: "Other search results"
-  }
+    title: "Other search results",
+  },
 ];
 
 export default function AudioJobs({ request }) {
@@ -42,7 +42,7 @@ export default function AudioJobs({ request }) {
 
     try {
       const data = await request(
-        `/api/discover/audio?area=${encodeURIComponent(area)}`
+        `/api/discover/audio?area=${encodeURIComponent(area)}`,
       );
       setJobs(Array.isArray(data.jobs) ? data.jobs : []);
     } catch (err) {
@@ -57,9 +57,8 @@ export default function AudioJobs({ request }) {
     <section aria-label="Audio job listings">
       <h2>Audio jobs</h2>
       <p>
-        Adzuna search candidates grouped by title and short preview,
-        not by verified qualifications. Open each full listing before
-        applying.
+        Adzuna search candidates grouped by title and short preview, not by
+        verified qualifications. Open each full listing before applying.
       </p>
 
       <label htmlFor="audio-area">Search area</label>
@@ -79,16 +78,18 @@ export default function AudioJobs({ request }) {
         {loading ? "Searching..." : "Search audio jobs"}
       </button>
 
-      {error && <p role="alert" className="error">{error}</p>}
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
 
       {searched && !loading && !error && jobs.length === 0 && (
         <p>No search results returned for this area.</p>
       )}
 
       {GROUPS.map((group) => {
-        const groupJobs = jobs.filter(
-          (job) => job.relevance === group.id
-        );
+        const groupJobs = jobs.filter((job) => job.relevance === group.id);
 
         if (groupJobs.length === 0) return null;
 
@@ -106,11 +107,7 @@ export default function AudioJobs({ request }) {
                 <p>{job.description}</p>
                 <p>
                   Source: Adzuna ·{" "}
-                  <a
-                    href={job.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a href={job.url} target="_blank" rel="noopener noreferrer">
                     View full job through Adzuna
                   </a>
                 </p>

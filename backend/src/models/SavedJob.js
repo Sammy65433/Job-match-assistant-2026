@@ -22,9 +22,15 @@ const savedJobSchema = new mongoose.Schema(
         validator: (skills) => skills.length > 0 && skills.length <= 100,
         message: "Enter between 1 and 100 required skills."
       }
-    }
+    },
+    status: {
+      type: String,
+      enum: ["saved", "ready", "applied", "interview", "rejected"],
+      default: "saved"
+    },
+    appliedAt: { type: Date, default: null }
   },
   { timestamps: true }
-);
+); // end schema
 
 export default mongoose.model("SavedJob", savedJobSchema);

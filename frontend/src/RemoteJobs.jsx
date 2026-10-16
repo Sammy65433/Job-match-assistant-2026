@@ -1,7 +1,7 @@
 const LOCATION_LABELS = {
   "us-mentioned": "USA mentioned, eligibility unverified",
   "canada-mentioned": "Canada mentioned, US eligibility unverified",
-  "verify-location": "Location eligibility needs review"
+  "verify-location": "Location eligibility needs review",
 };
 
 function JobCard({ job }) {
@@ -36,28 +36,28 @@ export default function RemoteJobs({
   loading,
   error,
   searched,
-  onLoad
+  onLoad,
 }) {
   const entryLevelJobs = jobs.filter(
-    (job) => job.levelGroup === "explicit-entry-level"
+    (job) => job.levelGroup === "explicit-entry-level",
   );
   const unspecifiedJobs = jobs.filter(
-    (job) => job.levelGroup !== "explicit-entry-level"
+    (job) => job.levelGroup !== "explicit-entry-level",
   );
 
   return (
     <section aria-label="Remote job listings">
       <h2>Remote jobs</h2>
       <p>
-        Job-title and location screening only. Open each listing on its
-        source site to review experience requirements, location
-        eligibility, and whether it is still available.
+        Job-title and location screening only. Open each listing on its source
+        site to review experience requirements, location eligibility, and
+        whether it is still available.
       </p>
 
       {track === "audio" ? (
         <p>
-          Audio jobs use the separate Adzuna search. These results are
-          for software and data only.
+          Audio jobs use the separate Adzuna search. These results are for
+          software and data only.
         </p>
       ) : (
         <>
@@ -65,7 +65,11 @@ export default function RemoteJobs({
             {loading ? "Loading..." : "Load remote jobs"}
           </button>
 
-          {error && <p role="alert" className="error">{error}</p>}
+          {error && (
+            <p role="alert" className="error">
+              {error}
+            </p>
+          )}
 
           {warnings.length > 0 && (
             <p role="status">
@@ -81,9 +85,8 @@ export default function RemoteJobs({
             <>
               <h3>Explicitly entry-level titles</h3>
               <p>
-                These titles mention junior, entry-level, associate,
-                graduate, or new grad. Check the full listing before
-                applying.
+                These titles mention junior, entry-level, associate, graduate,
+                or new grad. Check the full listing before applying.
               </p>
               {entryLevelJobs.map((job) => (
                 <JobCard key={job.id} job={job} />
@@ -95,8 +98,8 @@ export default function RemoteJobs({
             <>
               <h3>Level unspecified</h3>
               <p>
-                These titles do not specify a level. They may still
-                require substantial experience.
+                These titles do not specify a level. They may still require
+                substantial experience.
               </p>
               {unspecifiedJobs.map((job) => (
                 <JobCard key={job.id} job={job} />
