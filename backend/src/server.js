@@ -161,8 +161,8 @@ app.get("/api/discover/remote", async (req, res) => {
   } // end if invalid track
 
   try {
-    const { jobs: found, errors } = await discoverRemoteJobs(track);
-    res.json({ track, jobs: found, errors });
+    const { jobs: found, errors, stats } = await discoverRemoteJobs(track);
+    res.json({ track, jobs: found, errors, stats });
   } catch (error) {
     console.error("Could not discover remote jobs:", error);
     res.status(502).json({ error: "Could not fetch job listings." });

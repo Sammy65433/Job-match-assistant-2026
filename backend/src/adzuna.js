@@ -6,13 +6,65 @@ const SEARCHES = {
     where: "Los Angeles, CA"
   },
   newark: {
-    label: "Newark area",
+    label: "Newark / NYC area",
     where: "Newark, NJ"
   }
 };
 
 const cache = new Map();
 const CACHE_MS = 60 * 60 * 1000;
+
+const STRONG_TITLE =
+  /\b(audio (production )?engineer|recording engineer|sound engineer|mix(ing)? engineer|audio editor|podcast (producer|editor)|studio engineer|vocal producer)\b/i;
+
+const RELATED_TITLE =
+  /\b(audio|sound|recording|music produc(er|tion)|broadcast|studio|post.production)\b/i;
+
+const STUDIO_CONTEXT =
+  /\b(recording sessions?|vocal tracking|audio editing|mixing|pro tools|recording studio|podcast (editing|production)|live sound)\b/i;
+
+const UNRELATED_TITLE =
+  /\b(voice coach|bilingual|translator|animator|gameplay|data scientist|software engineer|quality engineer|acoustic engineer|sales manager|program manager|art director)\b/i;
+
+function classifyAudioJob(job) {
+  const title = String(job.title || "");
+  const description = String(job.description || "");
+
+  if (UNRELATED_TITLE.test(title)) {
+    return {
+      relevance: "other",
+      reason: "The title suggests a different specialty."
+    };
+  }
+
+  if (STRONG_TITLE.test(title) && STUDIO_CONTEXT.test(description)) {
+    return {
+      relevance: "likely-related",
+      reason: "The title and preview mention recording or audio-production work."
+    };
+  }
+
+  if (STRONG_TITLE.test(title) || RELATED_TITLE.test(title)) {
+    return {
+      relevance: "review",
+      reason: "The title is audio-related; check the full requirements."
+    };
+  }
+
+  return {
+    relevance: "other",
+    reason: "The preview does not clearly indicate an audio-production role."
+  };
+}
+
+function validRedirectUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 export async function searchAdzunaAudioJobs(area) {
   const search = SEARCHES[area];
@@ -57,14 +109,14 @@ export async function searchAdzunaAudioJobs(area) {
     throw new Error("Unexpected Adzuna response.");
   }
 
+  const relevanceOrder = {
+    "likely-related": 0,
+    review: 1,
+    other: 2
+  };
+
   const jobs = data.results
-    .filter((job) => {
-      try {
-        return new URL(job.redirect_url).protocol === "https:";
-      } catch {
-        return false;
-      }
-    })
+    .filter((job) => validRedirectUrl(job.redirect_url))
     .map((job) => ({
       id: `adzuna-${job.id}`,
       title: job.title || "",
@@ -73,8 +125,13 @@ export async function searchAdzunaAudioJobs(area) {
       description: job.description || "",
       postedAt: job.created || null,
       url: job.redirect_url,
-      source: "Adzuna"
-    }));
+      source: "Adzuna",
+      ...classifyAudioJob(job)
+    }))
+    .sort(
+      (a, b) =>
+        relevanceOrder[a.relevance] - relevanceOrder[b.relevance]
+    );
 
   cache.set(area, { time: Date.now(), jobs });
   return jobs;

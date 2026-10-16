@@ -1,3 +1,9 @@
+const LOCATION_LABELS = {
+  "us-mentioned": "USA mentioned, eligibility unverified",
+  "canada-mentioned": "Canada mentioned, US eligibility unverified",
+  "verify-location": "Location eligibility needs review"
+};
+
 function JobCard({ job }) {
   return (
     <article className="job">
@@ -5,13 +11,17 @@ function JobCard({ job }) {
         {job.title} · {job.company || "Company not listed"}
       </h3>
       <p>{job.location || "Location restrictions not specified"}</p>
+
+      {job.locationGroup && (
+        <p>
+          <strong>Location check:</strong>{" "}
+          {LOCATION_LABELS[job.locationGroup] || "Review full listing"}
+        </p>
+      )}
+
       <p>
         Source: {job.source} ·{" "}
-        <a
-          href={job.url}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href={job.url} target="_blank" rel="noopener noreferrer">
           View job on {job.source}
         </a>
       </p>
@@ -39,15 +49,15 @@ export default function RemoteJobs({
     <section aria-label="Remote job listings">
       <h2>Remote jobs</h2>
       <p>
-        Job-title screening only. Open each listing on its source site
-        to review experience requirements, location restrictions, and
-        whether it is still available.
+        Job-title and location screening only. Open each listing on its
+        source site to review experience requirements, location
+        eligibility, and whether it is still available.
       </p>
 
       {track === "audio" ? (
         <p>
-          Audio jobs use the separate Adzuna search. These remote-job
-          results are for software and data only.
+          Audio jobs use the separate Adzuna search. These results are
+          for software and data only.
         </p>
       ) : (
         <>

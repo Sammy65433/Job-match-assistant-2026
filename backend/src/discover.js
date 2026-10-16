@@ -17,6 +17,43 @@ const SENIOR_TITLE =
 const ENTRY_TITLE =
   /\b(junior|jr\.?|entry[\s-]?level|associate|graduate|new grad)\b/i;
 
+/* ---------- Location rules: US and Canada only for now ---------- */
+
+const US_LOCATION =
+  /(?:^|[^a-z])(usa|us|united states|north america)(?![a-z])/i;
+
+const CANADA_LOCATION = /\bcanada\b/i;
+
+const GLOBAL_LOCATION = /\b(worldwide|global|anywhere)\b/i;
+
+const OTHER_REGION_LOCATION =
+  /\b(hungary|bulgaria|poland|romania|ukraine|serbia|turkey|united kingdom|uk|ireland|europe|emea|germany|france|spain|portugal|italy|netherlands|sweden|norway|denmark|finland|switzerland|austria|apac|asia|india|philippines|singapore|japan|china|australia|new zealand|latam|latin america|south america|brazil|mexico|argentina|colombia|africa|middle east)\b/i;
+
+export function classifyLocation(location) {
+  const text = typeof location === "string" ? location.trim() : "";
+
+  // turn "U.S." and "U.S.A." into "usa" so the pattern can see them
+  const normalized = text.replace(/u\.s\.a?\.?/gi, "usa");
+
+  if (US_LOCATION.test(normalized)) return "us-mentioned";
+  if (CANADA_LOCATION.test(normalized)) return "canada-mentioned";
+
+  // "Worldwide" or a blank location may include the US or Canada,
+  // but the full listing still has to be checked.
+  if (GLOBAL_LOCATION.test(normalized)) return "verify-location";
+  if (OTHER_REGION_LOCATION.test(normalized)) return "outside-region";
+
+  return "verify-location";
+} // end classifyLocation
+
+const LOCATION_ORDER = {
+  "us-mentioned": 0,
+  "canada-mentioned": 1,
+  "verify-location": 2
+};
+
+/* ---------- Job rules ---------- */
+
 function classifyJob(job, track) {
   const title = typeof job.title === "string" ? job.title.trim() : "";
 
@@ -29,45 +66,50 @@ function classifyJob(job, track) {
 
   if (!matchesRole) return null;
 
+  const locationGroup = classifyLocation(job.location);
+
+  if (locationGroup === "outside-region") return null;
+
   return {
     ...job,
     title,
     levelGroup: ENTRY_TITLE.test(title)
       ? "explicit-entry-level"
-      : "level-unspecified"
+      : "level-unspecified",
+    locationGroup
   };
-}
+} // end classifyJob
+
+/* ---------- Sources ---------- */
 
 async function loadRemotive(track) {
-  const allJobs = await getRemotiveJobs();
+  const allJobs = await cached("remotive-all", 6 * HOUR, getRemotiveJobs);
+  const selected = selectRemotiveJobs(allJobs, track);
 
-  return selectRemotiveJobs(allJobs, track).map((job) => ({
+  return selected.map((job) => ({
     ...job,
     id: `remotive-${job.id}`,
     source: "Remotive"
-  }));
-}
+  })); // end map
+} // end loadRemotive
 
 export async function discoverRemoteJobs(track) {
   if (track !== "software" && track !== "data") {
     throw new Error("Choose the software or data track.");
-  }
+  } // end if invalid track
 
   const loaders = [
     { name: "Remotive", run: () => loadRemotive(track) },
     {
       name: "Jobicy",
       run: () =>
-        cached(`jobicy-${track}`, 3 * HOUR, () =>
-          getJobicyJobs(track)
-        )
+        cached(`jobicy-${track}`, 3 * HOUR, () => getJobicyJobs(track))
     },
     {
       name: "Himalayas",
-      run: () =>
-        cached("himalayas", 6 * HOUR, getHimalayasJobs)
+      run: () => cached("himalayas", 6 * HOUR, getHimalayasJobs)
     }
-  ];
+  ]; // end loaders
 
   const results = await Promise.allSettled(
     loaders.map((loader) => loader.run())
@@ -75,42 +117,52 @@ export async function discoverRemoteJobs(track) {
 
   const jobs = [];
   const errors = [];
+  const stats = {};
+
+  loaders.forEach((loader) => {
+    stats[loader.name] = { fetched: 0, kept: 0 };
+  }); // end forEach stats setup
 
   results.forEach((result, index) => {
+    const name = loaders[index].name;
+
     if (result.status === "fulfilled") {
-      jobs.push(...result.value);
+      const list = Array.isArray(result.value) ? result.value : [];
+      stats[name].fetched = list.length;
+      jobs.push(...list);
     } else {
-      errors.push(
-        `${loaders[index].name}: ${result.reason.message}`
-      );
-    }
-  });
+      errors.push(`${name}: ${result.reason.message}`);
+    } // end if fulfilled
+  }); // end forEach results
 
   const seen = new Set();
 
   const filteredJobs = jobs
     .filter(
       (job) =>
-        job &&
-        typeof job.url === "string" &&
-        /^https:\/\//i.test(job.url)
-    )
+        job && typeof job.url === "string" && /^https:\/\//i.test(job.url)
+    ) // end filter url
     .map((job) => classifyJob(job, track))
     .filter(Boolean)
     .filter((job) => {
-      const key = `${job.title}|${job.company || ""}`
-        .trim()
-        .toLowerCase();
+      const key = `${job.title}|${job.company || ""}`.trim().toLowerCase();
 
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
-    })
+    }) // end filter dedupe
     .sort((a, b) => {
-      const aIsEntry = a.levelGroup === "explicit-entry-level";
-      const bIsEntry = b.levelGroup === "explicit-entry-level";
-      return Number(bIsEntry) - Number(aIsEntry);
-    });
+      const aEntry = a.levelGroup === "explicit-entry-level" ? 0 : 1;
+      const bEntry = b.levelGroup === "explicit-entry-level" ? 0 : 1;
 
-  return { jobs: filteredJobs, errors };
-}
+      if (aEntry !== bEntry) return aEntry - bEntry;
+
+      return LOCATION_ORDER[a.locationGroup] - LOCATION_ORDER[b.locationGroup];
+    }); // end sort
+
+  filteredJobs.forEach((job) => {
+    if (stats[job.source]) stats[job.source].kept += 1;
+  }); // end forEach kept
+
+  return { jobs: filteredJobs, errors, stats };
+} // end discoverRemoteJobs

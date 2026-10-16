@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { TRACKS, parseSkills } from "./tracks.js";
 import RemoteJobs from "./RemoteJobs.jsx";
+import AudioJobs from "./AudioJobs.jsx";
 
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5003";
@@ -410,16 +411,19 @@ function App() {
           {saving ? "Saving..." : "Save pasted job"}
         </button>
       </section>
-
-      <RemoteJobs
-  track={track}
-  jobs={remoteJobs}
-  warnings={remoteWarnings}
-  loading={remoteLoading}
-  error={remoteError}
-  searched={remoteSearched}
-  onLoad={loadRemoteJobs}
-/>
+      {track === "audio" ? (
+        <AudioJobs request={request} />
+      ) : (
+        <RemoteJobs
+          track={track}
+          jobs={remoteJobs}
+          warnings={remoteWarnings}
+          loading={remoteLoading}
+          error={remoteError}
+          searched={remoteSearched}
+          onLoad={loadRemoteJobs}
+        />
+      )}
 
 
       <section aria-label="Saved jobs">
