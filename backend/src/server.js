@@ -5,7 +5,10 @@ import mongoose from "mongoose";
 import { jobs } from "../data/jobs.js";
 import { matchJob } from "./match.js";
 import SavedJob from "./models/SavedJob.js";
-import { getRemotiveJobs } from "./remotive.js";
+import {
+  getRemotiveJobs,
+  selectRemotiveJobs
+} from "./remotive.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 5003;
@@ -150,21 +153,30 @@ app.post("/api/saved-jobs", async (req, res) => {
     res.status(500).json({ error: "Could not save job." });
   }
 });
-app.get("/api/discover/remotive", async (_req, res) => {
+app.get("/api/discover/remotive", async (req, res) => {
+  const { track } = req.query;
+
+  if (track !== "software" && track !== "data") {
+    return res.status(400).json({
+      error: "Choose the software or data track."
+    });
+  }
+
   try {
-    const jobs = await getRemotiveJobs();
+    const allJobs = await getRemotiveJobs();
+    const jobs = selectRemotiveJobs(allJobs, track);
 
     res.json({
       source: "Remotive",
+      track,
       attribution: "Listings provided by Remotive. Open each job on Remotive.",
-      jobs: jobs.slice(0, 20)
+      jobs
     });
   } catch (error) {
     console.error("Could not fetch Remotive jobs:", error);
     res.status(502).json({ error: "Could not fetch job listings." });
   }
 });
-
 
 async function start() {
   if (!process.env.MONGODB_URI) {

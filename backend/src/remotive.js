@@ -8,6 +8,7 @@ let pendingFetch = null;
 function validRemotiveUrl(value) {
   try {
     const url = new URL(value);
+
     return (
       url.protocol === "https:" &&
       url.hostname === "remotive.com" &&
@@ -16,6 +17,10 @@ function validRemotiveUrl(value) {
   } catch {
     return false;
   }
+}
+
+function cleanText(value) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 async function fetchJobs() {
@@ -37,11 +42,10 @@ async function fetchJobs() {
     .filter((job) => validRemotiveUrl(job.url))
     .map((job) => ({
       id: String(job.id),
-      title: job.title,
-      company: job.company_name,
-      category: job.category,
-      location: job.candidate_required_location,
-      tags: Array.isArray(job.tags) ? job.tags : [],
+      title: cleanText(job.title),
+      company: cleanText(job.company_name),
+      category: cleanText(job.category),
+      location: cleanText(job.candidate_required_location),
       url: job.url,
       source: "Remotive"
     }));
@@ -65,4 +69,37 @@ export async function getRemotiveJobs() {
   }
 
   return pendingFetch;
+}
+
+const SENIOR_TITLE =
+  /\b(senior|sr\.?|staff|principal|lead|tech lead|head of|director|manager|architect)\b/i;
+
+const SOFTWARE_TITLE =
+  /\b(software|frontend|front-end|backend|back-end|full.?stack|web developer|react|javascript|node\.?js)\b/i;
+
+const DATA_TITLE =
+  /\b(data analyst|business analyst|business intelligence|bi analyst|reporting analyst|analytics analyst|etl analyst)\b/i;
+
+export function selectRemotiveJobs(jobs, track, limit = 20) {
+  if (track !== "software" && track !== "data") {
+    return [];
+  }
+
+  return jobs
+    .filter((job) => {
+      if (SENIOR_TITLE.test(job.title)) return false;
+
+      if (track === "software") {
+        return (
+          job.category === "Software Development" &&
+          SOFTWARE_TITLE.test(job.title)
+        );
+      }
+
+      return (
+        job.category === "Data and Analytics" &&
+        DATA_TITLE.test(job.title)
+      );
+    })
+    .slice(0, limit);
 }

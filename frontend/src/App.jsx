@@ -48,6 +48,10 @@ function App() {
   const [matches, setMatches] = useState([]);
   const [customMatch, setCustomMatch] = useState(null);
   const [savedJobs, setSavedJobs] = useState([]);
+  const [remoteJobs, setRemoteJobs] = useState([]);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const [remoteError, setRemoteError] = useState("");
+  const [remoteSearched, setRemoteSearched] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -95,13 +99,16 @@ function App() {
   }, [track]);
 
   function changeTrack(nextTrack) {
-    setTrack(nextTrack);
-    setMatches([]);
-    setCustomMatch(null);
-    setSavedJobs([]);
-    setHasSearched(false);
-    setError("");
-  }
+  setTrack(nextTrack);
+  setMatches([]);
+  setCustomMatch(null);
+  setSavedJobs([]);
+  setRemoteJobs([]);
+  setRemoteSearched(false);
+  setRemoteError("");
+  setHasSearched(false);
+  setError("");
+}
 
   async function request(path, options) {
     const response = await fetch(`${API_URL}${path}`, options);
@@ -120,6 +127,27 @@ function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
+
+  async function loadRemoteJobs() {
+  if (track === "audio") return;
+
+  setRemoteLoading(true);
+  setRemoteError("");
+  setRemoteJobs([]);
+  setRemoteSearched(false);
+
+  try {
+    const data = await request(
+      `/api/discover/remotive?track=${encodeURIComponent(track)}`
+    );
+    setRemoteJobs(Array.isArray(data.jobs) ? data.jobs : []);
+  } catch (err) {
+    setRemoteError(err.message);
+  } finally {
+    setRemoteLoading(false);
+    setRemoteSearched(true);
+  }
+}
 
   async function findMatches(event) {
     event.preventDefault();
@@ -179,7 +207,7 @@ function App() {
     const requiredSkills = parseSkills(requiredSkillText);
 
     if (!title.trim() || !company.trim() || !description.trim() ||
-        !requiredSkills.length) {
+      !requiredSkills.length) {
       setError("Complete the pasted-job form before saving.");
       return;
     }
@@ -267,7 +295,9 @@ function App() {
       <select
         id="career-track"
         value={track}
-        onChange={(event) => changeTrack(event.target.value)}
+        onChange={(event) => changeTrack(event.target.value
+          
+        )}
       >
         {Object.entries(TRACKS).map(([id, option]) => (
           <option key={id} value={id}>{option.label}</option>
@@ -398,6 +428,53 @@ function App() {
           {saving ? "Saving..." : "Save pasted job"}
         </button>
       </section>
+      <section aria-label="Remote job listings">
+        <h2>Remote jobs from Remotive</h2>
+        <p>
+          Live listings for exploration, not qualification matches. Open a
+          listing on Remotive to review its full requirements and location
+          restrictions.
+        </p>
+
+        {track === "audio" ? (
+          <p>
+            Remotive is a remote-job source and may not cover the local
+            studio and audio roles you want. Pasted jobs remain available
+            for this track.
+          </p>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={loadRemoteJobs}
+              disabled={remoteLoading}
+            >
+              {remoteLoading ? "Loading..." : "Load remote jobs"}
+            </button>
+
+            {remoteError && <p role="alert" className="error">{remoteError}</p>}
+
+            {remoteSearched && !remoteLoading && !remoteError && remoteJobs.length === 0 && (
+              <p>No listings matched this track in the current Remotive results.</p>
+            )}
+
+            {remoteJobs.map((job) => (
+              <article key={job.id} className="job">
+                <h3>{job.title} · {job.company}</h3>
+                <p>{job.location || "Location restrictions not specified"}</p>
+                <p>
+                  Source: Remotive ·{" "}
+                  <a href={job.url} target="_blank" rel="noopener noreferrer">
+                    View job on Remotive
+                  </a>
+                </p>
+              </article>
+            ))}
+
+          </>
+        )}
+      </section>
+
 
       <section aria-label="Saved jobs">
         <h2>Saved jobs: {TRACKS[track].label}</h2>
