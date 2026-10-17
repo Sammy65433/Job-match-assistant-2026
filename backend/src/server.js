@@ -20,7 +20,16 @@ const app = express();
 const port = Number(process.env.PORT) || 5003;
 const tracks = ["software", "data", "audio"];
 const statuses = ["saved", "ready", "applied", "interview", "rejected"];
-const sources = ["Remotive", "Jobicy", "Himalayas", "Adzuna", "The Muse"];
+const sources = [
+  "Remotive",
+  "Jobicy",
+  "Himalayas",
+  "Adzuna",
+  "The Muse",
+  "Greenhouse",
+  "Lever"
+];
+
 
 
 const allowedOrigins = [
