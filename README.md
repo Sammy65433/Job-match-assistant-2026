@@ -1,74 +1,43 @@
 # Job Match Assistant
 
-A personal job-match assistant for finding and reviewing roles across three career tracks:
+A personal job discovery and tracking prototype built with React/Vite, Express, and MongoDB.
 
-- **Software engineering:** primarily remote junior software, frontend, backend, and full-stack roles.
-- **Data analytics:** primarily remote analyst, reporting, BI, and ETL roles.
-- **Audio engineering:** recording, vocal engineering, audio editing, studio, and related production roles. Location preferences will be refined for the Los Angeles and Newark/NYC areas, with relocation considered.
+I built this project to bring three job searches into one place: remote software engineering, remote data analytics, and audio-production opportunities near Los Angeles or Newark/NYC. It combines job-source APIs with a workspace for reviewing listings and tracking applications.
 
-The goal is to find relevant jobs, explain potential matches, and support **manual review**. The app does not apply to jobs or send resumes.
+**Discovered jobs are search candidates, not verified resume matches.** The app does not submit applications or send resumes.
 
-## Current status
+## Features
 
-This is a local prototype built with React/Vite, Express, and MongoDB.
+- Find real remote software and data listings through backend integrations with Remotive, Jobicy, and Himalayas.
+- Search Adzuna for audio-related listings near Los Angeles and Newark/NYC.
+- Screen software/data listings by title, apparent seniority, and location text.
+- Group audio listings by apparent relevance using titles and short previews.
+- Open listings on their source sites to read the full requirements.
+- Paste jobs, enter their required skills, and save them to MongoDB by career track.
+- Manually track a saved job's status: saved, ready, applied, interview, or rejected.
+- Enter editable resume-evidence text and run limited phrase or keyword-overlap checks.
 
-**Working:**
+The frontend has **Find jobs** and **Resume and saved jobs** views. They switch within one URL rather than using separate browser routes.
 
-- Select a career track and edit its skill list.
-- Score three hard-coded sample jobs.
-- Paste a job description and manually enter its required skills to preview a match.
-- Save pasted jobs to MongoDB by career track.
-- View saved jobs and their skill-match estimates.
-- Filter sample-job results by remote status and minimum listed salary.
-- MongoDB persistence was confirmed by saving a dummy job and seeing it remain after a browser refresh.
-
-**Not built yet:**
-
-- Automatic job discovery or a job-listing API.
-- Resume file upload, parsing, or evidence-based qualification checks.
-- Automatic extraction of requirements from job descriptions.
-- Saved location preferences or reliable location filtering for pasted jobs.
-- User authentication or access controls.
-- Application submission, email sending, or job-board credential storage.
-
-Using the app repeatedly does **not** train it or cause it to discover jobs automatically.
-
-## How matching works today
-
-The current score compares the selected track’s editable skills with a job’s explicitly entered required skills. Each required skill has equal weight:
+## Architecture
 
 ```text
-skill-match score = matched required skills / total required skills × 100
+React/Vite frontend
+    |
+    | HTTP requests
+    v
+Express backend
+    ├── Remotive, Jobicy, Himalayas: remote software/data discovery
+    ├── Adzuna: location-based audio discovery
+    ├── Matching helpers: manual skill checks and keyword overlap
+    └── MongoDB: manually saved jobs and application statuses
 ```
 
-Jobs scoring at least **60%** are marked for review. This is a **screening estimate**, not proof of qualification. Experience, education, work authorization, location, and other requirements are not verified by the score. A job listing only one required skill can score 100%, even when the full role is not a good fit.
-
-Job descriptions provide context but are **not automatically interpreted or scored**.
-
-## Project structure
-
-```text
-Job-Assistant-Tracker/
-├── backend/
-│   ├── data/
-│   │   └── jobs.js
-│   ├── src/
-│   │   ├── models/
-│   │   │   └── SavedJob.js
-│   │   ├── match.js
-│   │   └── server.js
-│   └── README.md
-├── frontend/
-│   └── src/
-│       └── App.jsx
-└── README.md
-```
+External API credentials and the MongoDB connection belong on the backend. The browser does not connect directly to MongoDB or job-source APIs.
 
 ## Run locally
 
-Use separate terminals for the backend and frontend.
-
-**Backend:**
+Use two terminals.
 
 ```bash
 cd backend
@@ -76,26 +45,35 @@ npm install
 npm run dev
 ```
 
-The backend requires a private `backend/.env` containing its MongoDB connection setting. See `backend/README.md` for backend details. Do not commit `.env` or put database credentials in frontend `VITE_` variables.
-
-**Frontend:**
-
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-The frontend should point to the local backend on port `5003`. Vite prints its own browser URL when it starts; its port may vary.
+The backend defaults to `http://127.0.0.1:5003`; Vite prints the frontend URL. See the backend and frontend READMEs for configuration and route details.
 
-## Privacy and deployment
+## What the results mean
 
-This app is currently intended for **local use only**. Saved-job routes do not have authentication, so do not deploy the current backend publicly. Do not commit resumes, personal contact details, database credentials, or job-board credentials.
+Discovery screens listings using job titles and location strings. Labels such as “entry-level,” “USA mentioned,” or “likely related” are **review hints**, not eligibility decisions.
 
-If resume uploads are added later, files and any credentials must be handled on the backend with authentication and access controls.
+For a manually pasted job, an equal-weight required-skill calculation can produce a screening estimate. A 60% result is **not proof of qualification**. Keyword overlap only detects terms present in the available listing and resume text; it does not establish that those terms are required or that the applicant meets them.
 
-## Next milestone
+## Current limitations
 
-Choose a job-listing source that **permits API access** and covers the desired software, data, and audio roles. Integrate it through the backend, then filter and score fetched jobs for manual review.
+- Real listings are not reliably filtered by salary.
+- Some providers return missing, truncated, or HTML-formatted descriptions. A recent check found no `description` in the first three returned Jobicy listings; a mapping change has been added but needs verification.
+- The resume comparison does not upload or parse resume files. Resume text entered for checks is not saved by those routes.
+- Application statuses are manual records. Marking a job “Applied” does not apply to it.
+- No authentication protects the backend yet. **Run locally; do not deploy the current backend publicly.**
+- Using the app repeatedly does not train it.
 
-Only consider application automation where the employer and source explicitly allow it. Every application must be reviewed and approved before a resume is sent.
+## Next steps
+
+1. Verify job description mappings, source attribution, and provider terms.
+2. Connect keyword-overlap checks to real listing cards **only where usable listing text exists**.
+3. Improve salary and location handling without guessing missing data.
+4. Add authentication and access controls before public deployment or stored resumes.
+5. Consider application automation only where permitted by the source and employer, with explicit approval before sending a resume.
+
+See [`backend/README.md`](backend/README.md) and [`frontend/README.md`](frontend/README.md) for implementation details.

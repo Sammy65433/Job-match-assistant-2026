@@ -7,7 +7,7 @@ export async function getHimalayasJobs() {
   const data = await response.json();
   const list = Array.isArray(data.jobs) ? data.jobs : [];
 
-  console.log("Himalayas first job:", list[0]); // CHECK 2
+  // console.log("Himalayas first job:", list[0]); // CHECK 2
 
   return list.map((job) => ({
     id: `himalayas-${job.guid || job.applicationLink}`,

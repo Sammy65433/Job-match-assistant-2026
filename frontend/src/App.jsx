@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import { TRACKS, parseSkills } from "./tracks.js";
+import JobSearchForm from "./JobSearchForm.jsx";
 import RemoteJobs from "./RemoteJobs.jsx";
 import AudioJobs from "./AudioJobs.jsx";
 import ResumeComparison from "./ResumeComparison.jsx";
 import ResumeJobCheck from "./ResumeJobCheck.jsx";
+import { descriptionText } from "./descriptionText.js";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5003";
 
@@ -13,39 +15,47 @@ const STATUS_LABELS = {
   ready: "Ready to apply",
   applied: "Applied (marked by me)",
   interview: "Interview",
-  rejected: "Closed / rejected",
-}; // end STATUS_LABELS
+  rejected: "Closed / rejected"
+};
 
-function App() {
+const TABS = [
+  ["jobs", "Find jobs"],
+  ["preview", "Preview a pasted job"],
+  ["resume", "Resume evidence"],
+  ["saved", "Saved jobs"]
+];
+
+export default function App() {
+  const [page, setPage] = useState("jobs");
   const [track, setTrack] = useState("software");
+
   const [skillsByTrack, setSkillsByTrack] = useState({
     software: TRACKS.software.defaultSkills,
     data: TRACKS.data.defaultSkills,
-    audio: TRACKS.audio.defaultSkills,
-  });
-  const [remoteOnlyByTrack, setRemoteOnlyByTrack] = useState({
-    software: true,
-    data: true,
-    audio: false,
-  });
-  const [minimumSalaryByTrack, setMinimumSalaryByTrack] = useState({
-    software: "",
-    data: "",
-    audio: "",
+    audio: TRACKS.audio.defaultSkills
   });
 
-  const [matches, setMatches] = useState([]);
-  const [customMatch, setCustomMatch] = useState(null);
+  const [resumeTextByTrack, setResumeTextByTrack] = useState({
+    software: "",
+    data: "",
+    audio: ""
+  });
+
   const [savedJobs, setSavedJobs] = useState([]);
+  const [savedJobsLoading, setSavedJobsLoading] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState("");
+
   const [remoteJobs, setRemoteJobs] = useState([]);
   const [remoteWarnings, setRemoteWarnings] = useState([]);
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteError, setRemoteError] = useState("");
   const [remoteSearched, setRemoteSearched] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [audioSearchRequested, setAudioSearchRequested] = useState(false);
+
+  const [customMatch, setCustomMatch] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
 
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -53,76 +63,84 @@ function App() {
   const [requiredSkillText, setRequiredSkillText] = useState("");
 
   const skillText = skillsByTrack[track];
-  const remoteOnly = remoteOnlyByTrack[track];
-  const minimumSalary = minimumSalaryByTrack[track];
-  const [resumeTextByTrack, setResumeTextByTrack] = useState({
-    software: "",
-    data: "",
-    audio: "",
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadSavedJobs() {
-      try {
-        const response = await fetch(
-          `${API_URL}/api/saved-jobs?track=${encodeURIComponent(track)}`,
-        );
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Could not load saved jobs.");
-        } // end if not ok
-
-        if (!cancelled) {
-          setSavedJobs(data.savedJobs);
-        } // end if not cancelled
-      } catch (err) {
-        if (!cancelled) {
-          setSavedJobs([]);
-          setError(err.message);
-        } // end if not cancelled
-      } // end try/catch
-    } // end loadSavedJobs
-
-    loadSavedJobs();
-
-    return () => {
-      cancelled = true;
-    }; // end cleanup
-  }, [track]); // end useEffect
-
-  function changeTrack(nextTrack) {
-    setTrack(nextTrack);
-    setMatches([]);
-    setCustomMatch(null);
-    setSavedJobs([]);
-    setRemoteJobs([]);
-    setRemoteWarnings([]);
-    setRemoteSearched(false);
-    setRemoteError("");
-    setHasSearched(false);
-    setError("");
-  } // end changeTrack
 
   async function request(path, options) {
     const response = await fetch(`${API_URL}${path}`, options);
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Request failed.");
-    } // end if not ok
+      throw new Error(
+        data.error || `Request failed (${response.status}).`
+      );
+    }
 
     return data;
-  } // end request
+  }
 
-  const post = (path, body) =>
-    request(path, {
+  function post(path, body) {
+    return request(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(body)
     });
+  }
+
+  useEffect(() => {
+    if (page !== "saved") return;
+
+    let cancelled = false;
+
+    async function loadSavedJobs() {
+      setSavedJobsLoading(true);
+      setWorkspaceError("");
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/saved-jobs?track=${encodeURIComponent(track)}`
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              `Could not load saved jobs (${response.status}).`
+          );
+        }
+
+        if (!cancelled) {
+          setSavedJobs(
+            Array.isArray(data.savedJobs) ? data.savedJobs : []
+          );
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSavedJobs([]);
+          setWorkspaceError(error.message);
+        }
+      } finally {
+        if (!cancelled) setSavedJobsLoading(false);
+      }
+    }
+
+    void loadSavedJobs();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page, track]);
+
+  function changeTrack(nextTrack) {
+    setTrack(nextTrack);
+    setSavedJobs([]);
+    setWorkspaceError("");
+    setRemoteJobs([]);
+    setRemoteWarnings([]);
+    setRemoteError("");
+    setRemoteSearched(false);
+    setAudioSearchRequested(false);
+    setCustomMatch(null);
+    setFormError("");
+  }
 
   async function loadRemoteJobs() {
     if (track === "audio") return;
@@ -135,41 +153,31 @@ function App() {
 
     try {
       const data = await request(
-        `/api/discover/remote?track=${encodeURIComponent(track)}`,
+        `/api/discover/remote?track=${encodeURIComponent(track)}`
       );
       setRemoteJobs(Array.isArray(data.jobs) ? data.jobs : []);
-      setRemoteWarnings(Array.isArray(data.errors) ? data.errors : []);
-    } catch (err) {
-      setRemoteError(err.message);
+      setRemoteWarnings(
+        Array.isArray(data.errors) ? data.errors : []
+      );
+    } catch (error) {
+      setRemoteError(error.message);
     } finally {
       setRemoteLoading(false);
       setRemoteSearched(true);
-    } // end try/catch/finally
-  } // end loadRemoteJobs
+    }
+  }
 
-  async function findMatches(event) {
+  function findRealJobs(event) {
     event.preventDefault();
 
-    const skills = parseSkills(skillText);
+    if (track === "audio") {
+      setAudioSearchRequested(true);
+    } else {
+      void loadRemoteJobs();
+    }
 
-    if (!skills.length) {
-      setError("Enter at least one skill.");
-      return;
-    } // end if no skills
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const data = await post("/api/matches", { skills });
-      setMatches(data.matches);
-      setHasSearched(true);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    } // end try/catch/finally
-  } // end findMatches
+    document.getElementById("job-results")?.scrollIntoView();
+  }
 
   async function previewCustomJob(event) {
     event.preventDefault();
@@ -178,12 +186,13 @@ function App() {
     const requiredSkills = parseSkills(requiredSkillText);
 
     if (!skills.length || !requiredSkills.length) {
-      setError("Enter your skills and the job's required skills.");
+      setFormError("Enter your skills and the job's required skills.");
       return;
-    } // end if missing skills
+    }
 
-    setLoading(true);
-    setError("");
+    setPreviewLoading(true);
+    setFormError("");
+    setCustomMatch(null);
 
     try {
       const data = await post("/api/matches/custom", {
@@ -191,15 +200,15 @@ function App() {
         title,
         company,
         description,
-        requiredSkills,
+        requiredSkills
       });
       setCustomMatch(data.match);
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      setFormError(error.message);
     } finally {
-      setLoading(false);
-    } // end try/catch/finally
-  } // end previewCustomJob
+      setPreviewLoading(false);
+    }
+  }
 
   async function saveJob() {
     const requiredSkills = parseSkills(requiredSkillText);
@@ -210,12 +219,12 @@ function App() {
       !description.trim() ||
       !requiredSkills.length
     ) {
-      setError("Complete the pasted-job form before saving.");
+      setFormError("Complete the pasted-job form before saving.");
       return;
-    } // end if form incomplete
+    }
 
     setSaving(true);
-    setError("");
+    setFormError("");
 
     try {
       const data = await post("/api/saved-jobs", {
@@ -223,7 +232,7 @@ function App() {
         title,
         company,
         description,
-        requiredSkills,
+        requiredSkills
       });
 
       setSavedJobs((current) => [data.savedJob, ...current]);
@@ -232,82 +241,82 @@ function App() {
       setCompany("");
       setDescription("");
       setRequiredSkillText("");
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      setFormError(error.message);
     } finally {
       setSaving(false);
-    } // end try/catch/finally
-  } // end saveJob
+    }
+  }
+
+  async function saveListing(job, listingTrack) {
+    if (!job.url || !job.source || !job.id) {
+      throw new Error("This listing is missing a source link.");
+    }
+
+    const data = await post("/api/saved-jobs/from-listing", {
+      track: listingTrack,
+      title: job.title,
+      company: job.company || "Company not listed",
+      description: job.description || "",
+      source: job.source,
+      sourceJobId: String(job.id),
+      url: job.url
+    });
+
+    if (listingTrack === track) {
+      setSavedJobs((current) =>
+        current.some((saved) => saved._id === data.savedJob._id)
+          ? current
+          : [data.savedJob, ...current]
+      );
+    }
+
+    return data.savedJob;
+  }
 
   async function updateStatus(jobId, status) {
-    setError("");
+    setWorkspaceError("");
 
     try {
-      const data = await request(`/api/saved-jobs/${jobId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
+      const data = await request(
+        `/api/saved-jobs/${encodeURIComponent(jobId)}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status })
+        }
+      );
 
       setSavedJobs((current) =>
-        current.map((job) => (job._id === jobId ? data.savedJob : job)),
-      ); // end map
-    } catch (err) {
-      setError(err.message);
-    } // end try/catch
-  } // end updateStatus
-
-  const visibleMatches = matches.filter((job) => {
-    if (remoteOnly && !job.remote) return false;
-    if (
-      minimumSalary !== "" &&
-      (job.salaryMin == null || job.salaryMin < Number(minimumSalary))
-    ) {
-      return false;
-    } // end if salary too low
-    return true;
-  }); // end filter
-
-  const reviewQueue = visibleMatches.filter((job) => job.inReviewQueue);
-
-  function renderJob(job) {
-    return (
-      <article key={job.id} className="job">
-        <h3>
-          {job.title} · {job.company}
-        </h3>
-        <p>
-          <strong>{job.score}% skill match</strong> · {job.location}
-          {job.salaryMin != null && (
-            <>
-              {" · "}Listed salary from{" "}
-              {job.salaryMin.toLocaleString("en-US", {
-                style: "currency",
-                currency: "USD",
-                maximumFractionDigits: 0,
-              })}
-            </>
-          )}
-        </p>
-        <p>{job.explanation}</p>
-        <p>
-          <strong>Matched:</strong> {job.matchedSkills.join(", ") || "None"}
-        </p>
-        <p>
-          <strong>Missing:</strong> {job.missingSkills.join(", ") || "None"}
-        </p>
-        {job.inReviewQueue && <span className="badge">Review queue</span>}
-      </article>
-    );
-  } // end renderJob
+        current.map((job) =>
+          job._id === jobId ? data.savedJob : job
+        )
+      );
+    } catch (error) {
+      setWorkspaceError(error.message);
+    }
+  }
 
   return (
     <main className="page">
       <h1>Job Match Assistant</h1>
       <p>
-        Compare skills with sample or pasted jobs. Scores are estimates, not
-        proof of qualification.
+        Find real listings, review requirements, and track jobs you
+        save. Discovery results are not verified resume matches.
       </p>
+
+      <nav aria-label="App views" className="page-nav">
+        {TABS.map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setPage(id)}
+            aria-current={page === id ? "page" : undefined}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
 
       <label htmlFor="career-track">Career track</label>
       <select
@@ -322,225 +331,248 @@ function App() {
         ))}
       </select>
 
-      <form onSubmit={findMatches}>
-        <label htmlFor="skills">
-          {TRACKS[track].label} skills, separated by commas
-        </label>
-        <textarea
-          id="skills"
-          rows={4}
-          value={skillText}
-          onChange={(event) =>
-            setSkillsByTrack((current) => ({
-              ...current,
-              [track]: event.target.value,
-            }))
-          }
-        />
-
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={remoteOnly}
-            onChange={(event) =>
-              setRemoteOnlyByTrack((current) => ({
+      {page === "jobs" && (
+        <>
+          <JobSearchForm
+            track={track}
+            skillText={skillText}
+            loading={remoteLoading}
+            onSkillChange={(text) =>
+              setSkillsByTrack((current) => ({
                 ...current,
-                [track]: event.target.checked,
+                [track]: text
               }))
             }
+            onSubmit={findRealJobs}
           />
-          Remote jobs only
-        </label>
 
-        <label htmlFor="minimum-salary">Minimum listed salary (USD)</label>
-        <input
-          id="minimum-salary"
-          type="number"
-          min="0"
-          step="1000"
-          value={minimumSalary}
-          onChange={(event) =>
-            setMinimumSalaryByTrack((current) => ({
-              ...current,
-              [track]: event.target.value,
-            }))
-          }
-        />
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Checking..." : "Find sample matches"}
-        </button>
-      </form>
-
-      {error && (
-        <p role="alert" className="error">
-          {error}
-        </p>
+          <section id="job-results" aria-label="Real job results">
+            {track === "audio" ? (
+              <>
+                {audioSearchRequested && (
+                  <p>Select an area and click Search audio jobs below.</p>
+                )}
+                <AudioJobs request={request} onSave={saveListing} />
+              </>
+            ) : (
+              <RemoteJobs
+                track={track}
+                jobs={remoteJobs}
+                warnings={remoteWarnings}
+                loading={remoteLoading}
+                error={remoteError}
+                searched={remoteSearched}
+                onLoad={loadRemoteJobs}
+                onSave={saveListing}
+              />
+            )}
+          </section>
+        </>
       )}
 
-      {hasSearched && (
-        <section aria-label="Sample job matches">
-          <h2>Sample matches</h2>
+      {page === "preview" && (
+        <section aria-label="Custom job preview">
+          <h2>Preview a pasted job</h2>
           <p>
-            {visibleMatches.length} shown · {reviewQueue.length} in review queue
+            Enter required skills from the listing. This preview uses
+            your editable skills, not verified resume evidence.
           </p>
-          {visibleMatches.length === 0 && (
-            <p>No sample jobs meet these preferences.</p>
+
+          <form onSubmit={previewCustomJob}>
+            <label htmlFor="job-title">Job title</label>
+            <input
+              id="job-title"
+              required
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+
+            <label htmlFor="company">Company</label>
+            <input
+              id="company"
+              required
+              value={company}
+              onChange={(event) => setCompany(event.target.value)}
+            />
+
+            <label htmlFor="description">Job description</label>
+            <textarea
+              id="description"
+              required
+              rows={5}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+
+            <label htmlFor="required-skills">
+              Required skills, separated by commas
+            </label>
+            <textarea
+              id="required-skills"
+              required
+              rows={2}
+              value={requiredSkillText}
+              onChange={(event) =>
+                setRequiredSkillText(event.target.value)
+              }
+            />
+
+            <button type="submit" disabled={previewLoading}>
+              {previewLoading ? "Checking..." : "Preview match"}
+            </button>
+          </form>
+
+          {formError && (
+            <p role="alert" className="error">
+              {formError}
+            </p>
           )}
-          {visibleMatches.map(renderJob)}
-        </section>
-      )}
 
-      <section aria-label="Custom job preview">
-        <h2>Preview a pasted job</h2>
-        <p>
-          Enter the required skills yourself. The description is for context
-          only and is not automatically scored.
-        </p>
-
-        <form onSubmit={previewCustomJob}>
-          <label htmlFor="job-title">Job title</label>
-          <input
-            id="job-title"
-            required
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-          />
-
-          <label htmlFor="company">Company</label>
-          <input
-            id="company"
-            required
-            value={company}
-            onChange={(event) => setCompany(event.target.value)}
-          />
-
-          <label htmlFor="description">Job description</label>
-          <textarea
-            id="description"
-            required
-            rows={5}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-          />
-
-          <label htmlFor="required-skills">
-            Required skills, separated by commas
-          </label>
-          <textarea
-            id="required-skills"
-            required
-            rows={2}
-            value={requiredSkillText}
-            onChange={(event) => setRequiredSkillText(event.target.value)}
-          />
-
-          <button type="submit" disabled={loading}>
-            {loading ? "Checking..." : "Preview match"}
-          </button>
-        </form>
-
-        {customMatch && renderJob(customMatch)}
-
-        <button type="button" onClick={saveJob} disabled={saving}>
-          {saving ? "Saving..." : "Save pasted job"}
-        </button>
-      </section>
-
-      {track === "audio" ? (
-        <AudioJobs request={request} />
-      ) : (
-        <RemoteJobs
-          track={track}
-          jobs={remoteJobs}
-          warnings={remoteWarnings}
-          loading={remoteLoading}
-          error={remoteError}
-          searched={remoteSearched}
-          onLoad={loadRemoteJobs}
-        />
-      )}
-
-      <ResumeComparison
-        key={track}
-        trackId={track}
-        trackLabel={TRACKS[track].label}
-        request={request}
-        resumeText={resumeTextByTrack[track]}
-        onResumeTextChange={(text) =>
-          setResumeTextByTrack((current) => ({
-            ...current,
-            [track]: text,
-          }))
-        }
-      />
-
-      <section aria-label="Saved jobs">
-        <h2>Saved jobs: {TRACKS[track].label}</h2>
-        {savedJobs.length === 0 && <p>No jobs saved for this track yet.</p>}
-
-        {savedJobs.map((job) => {
-          const skillMatch = parseSkills(skillText);
-          const matched = job.requiredSkills.filter((required) =>
-            skillMatch.some(
-              (skill) => skill.toLowerCase() === required.toLowerCase(),
-            ),
-          );
-          const score = Math.round(
-            (matched.length / job.requiredSkills.length) * 100,
-          );
-
-          return (
-            <article key={job._id} className="job">
+          {customMatch && (
+            <article className="job">
               <h3>
-                {job.title} · {job.company}
+                {customMatch.title} · {customMatch.company}
               </h3>
               <p>
-                <strong>{score}% skill match</strong>
-                {score >= 60 && " · Review queue"}
-              </p>
-              <p>{job.description}</p>
-              <p>
-                <strong>Required:</strong> {job.requiredSkills.join(", ")}
+                {customMatch.score}% match against manually entered
+                skills. This is a screening estimate, not proof of
+                qualification.
               </p>
               <p>
                 <strong>Missing:</strong>{" "}
-                {job.requiredSkills
-                  .filter((required) => !matched.includes(required))
-                  .join(", ") || "None"}
+                {customMatch.missingSkills.join(", ") || "None"}
               </p>
-
-              <label htmlFor={`status-${job._id}`}>Application status</label>
-              <select
-                id={`status-${job._id}`}
-                value={job.status || "saved"}
-                onChange={(event) => updateStatus(job._id, event.target.value)}
-              >
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-
-              {job.appliedAt && (
-                <p>
-                  Marked applied on{" "}
-                  {new Date(job.appliedAt).toLocaleDateString()}
-                </p>
-              )}
-              <ResumeJobCheck
-                job={job}
-                resumeText={resumeTextByTrack[track]}
-                skillText={skillText}
-                request={request}
-              />
             </article>
-          );
-        })}
-      </section>
+          )}
+
+          <button type="button" onClick={saveJob} disabled={saving}>
+            {saving ? "Saving..." : "Save pasted job"}
+          </button>
+        </section>
+      )}
+
+      {page === "resume" && (
+        <ResumeComparison
+          key={track}
+          trackId={track}
+          trackLabel={TRACKS[track].label}
+          request={request}
+          resumeText={resumeTextByTrack[track]}
+          onResumeTextChange={(text) =>
+            setResumeTextByTrack((current) => ({
+              ...current,
+              [track]: text
+            }))
+          }
+        />
+      )}
+
+      {page === "saved" && (
+        <>
+          {workspaceError && (
+            <p role="alert" className="error">
+              {workspaceError}
+            </p>
+          )}
+
+          <section aria-label="Saved jobs">
+            <h2>Saved jobs: {TRACKS[track].label}</h2>
+
+            {savedJobsLoading && <p>Loading saved jobs...</p>}
+            {!savedJobsLoading &&
+              !workspaceError &&
+              savedJobs.length === 0 && (
+                <p>No jobs saved for this track yet.</p>
+              )}
+
+            {savedJobs.map((job) => (
+              <article key={job._id} className="job">
+                <h3>
+                  {job.title} · {job.company}
+                </h3>
+
+                {job.description && (
+  <>
+    <p>
+      {descriptionText(job.description).slice(0, 180)}
+      {descriptionText(job.description).length > 180 ? "…" : ""}
+    </p>
+
+    <details>
+      <summary>View job description</summary>
+      <p style={{ whiteSpace: "pre-line" }}>
+        {descriptionText(job.description)}
+      </p>
+    </details>
+  </>
+)}
+
+
+                <p>
+                  <strong>Required:</strong>{" "}
+                  {job.requiredSkills?.length
+                    ? job.requiredSkills.join(", ")
+                    : "Requirements not reviewed"}
+                </p>
+
+                <label htmlFor={`status-${job._id}`}>
+                  Application status
+                </label>
+                <select
+                  id={`status-${job._id}`}
+                  value={job.status || "saved"}
+                  onChange={(event) =>
+                    updateStatus(job._id, event.target.value)
+                  }
+                >
+                  {Object.entries(STATUS_LABELS).map(
+                    ([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    )
+                  )}
+                </select>
+
+                {job.appliedAt && (
+                  <p>
+                    Marked applied on{" "}
+                    {new Date(job.appliedAt).toLocaleDateString()}
+                  </p>
+                )}
+
+                <ResumeJobCheck
+                  job={job}
+                  resumeText={resumeTextByTrack[track]}
+                  skillText={skillText}
+                  request={request}
+                />
+
+                {job.url && (
+                  <p>
+                    <a
+                      href={job.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open application on {job.source || "source site"}
+                    </a>
+                  </p>
+                )}
+
+                {job.status !== "applied" && (
+                  <button
+                    type="button"
+                    onClick={() => updateStatus(job._id, "applied")}
+                  >
+                    Mark applied
+                  </button>
+                )}
+              </article>
+            ))}
+          </section>
+        </>
+      )}
     </main>
   );
-} // end App
-
-export default App;
+}

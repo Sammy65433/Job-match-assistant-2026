@@ -1,15 +1,18 @@
+import SaveListingButton from "./SaveListingButton.jsx";
+
 const LOCATION_LABELS = {
   "us-mentioned": "USA mentioned, eligibility unverified",
   "canada-mentioned": "Canada mentioned, US eligibility unverified",
-  "verify-location": "Location eligibility needs review",
+  "verify-location": "Location eligibility needs review"
 };
 
-function JobCard({ job }) {
+function JobCard({ job, track, onSave }) {
   return (
     <article className="job">
       <h3>
         {job.title} · {job.company || "Company not listed"}
       </h3>
+
       <p>{job.location || "Location restrictions not specified"}</p>
 
       {job.locationGroup && (
@@ -25,6 +28,12 @@ function JobCard({ job }) {
           View job on {job.source}
         </a>
       </p>
+
+      <SaveListingButton
+        job={job}
+        track={track}
+        onSave={onSave}
+      />
     </article>
   );
 }
@@ -37,27 +46,28 @@ export default function RemoteJobs({
   error,
   searched,
   onLoad,
+  onSave
 }) {
   const entryLevelJobs = jobs.filter(
-    (job) => job.levelGroup === "explicit-entry-level",
+    (job) => job.levelGroup === "explicit-entry-level"
   );
   const unspecifiedJobs = jobs.filter(
-    (job) => job.levelGroup !== "explicit-entry-level",
+    (job) => job.levelGroup !== "explicit-entry-level"
   );
 
   return (
     <section aria-label="Remote job listings">
       <h2>Remote jobs</h2>
       <p>
-        Job-title and location screening only. Open each listing on its source
-        site to review experience requirements, location eligibility, and
-        whether it is still available.
+        Job-title and location screening only. Open each listing on its
+        source site to review experience requirements, location
+        eligibility, and whether it is still available.
       </p>
 
       {track === "audio" ? (
         <p>
-          Audio jobs use the separate Adzuna search. These results are for
-          software and data only.
+          Audio jobs use the separate Adzuna search. These results are
+          for software and data only.
         </p>
       ) : (
         <>
@@ -65,11 +75,7 @@ export default function RemoteJobs({
             {loading ? "Loading..." : "Load remote jobs"}
           </button>
 
-          {error && (
-            <p role="alert" className="error">
-              {error}
-            </p>
-          )}
+          {error && <p role="alert" className="error">{error}</p>}
 
           {warnings.length > 0 && (
             <p role="status">
@@ -85,11 +91,17 @@ export default function RemoteJobs({
             <>
               <h3>Explicitly entry-level titles</h3>
               <p>
-                These titles mention junior, entry-level, associate, graduate,
-                or new grad. Check the full listing before applying.
+                These titles mention junior, entry-level, associate,
+                graduate, or new grad. Check the full listing before
+                applying.
               </p>
               {entryLevelJobs.map((job) => (
-                <JobCard key={job.id} job={job} />
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  track={track}
+                  onSave={onSave}
+                />
               ))}
             </>
           )}
@@ -98,11 +110,16 @@ export default function RemoteJobs({
             <>
               <h3>Level unspecified</h3>
               <p>
-                These titles do not specify a level. They may still require
-                substantial experience.
+                These titles do not specify a level. They may still
+                require substantial experience.
               </p>
               {unspecifiedJobs.map((job) => (
-                <JobCard key={job.id} job={job} />
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  track={track}
+                  onSave={onSave}
+                />
               ))}
             </>
           )}

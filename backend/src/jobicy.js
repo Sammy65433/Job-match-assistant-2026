@@ -10,7 +10,7 @@ export async function getJobicyJobs(track) {
   const data = await response.json();
   const list = Array.isArray(data.jobs) ? data.jobs : [];
 
-  console.log("Jobicy first job:", list[0]); // CHECK 1
+  // console.log("Jobicy first job:", list[0]); // CHECK 1
 
   return list.map((job) => ({
     id: `jobicy-${job.id}`,
@@ -18,6 +18,11 @@ export async function getJobicyJobs(track) {
     company: job.companyName || "",
     location: job.jobGeo || "",
     url: job.url,
+    description:
+  typeof job.jobDescription === "string"
+    ? job.jobDescription
+    : "",
     source: "Jobicy"
+    
   })); // end map
-} // end getJobicyJobs
+} // end getJobicyJobsx

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SaveListingButton from "./SaveListingButton.jsx";
 
 const AREAS = {
   los_angeles: "Los Angeles area",
@@ -20,7 +21,7 @@ const GROUPS = [
   },
 ];
 
-export default function AudioJobs({ request }) {
+export default function AudioJobs({ request, onSave }) {
   const [area, setArea] = useState("los_angeles");
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -109,8 +110,11 @@ export default function AudioJobs({ request }) {
                   Source: Adzuna ·{" "}
                   <a href={job.url} target="_blank" rel="noopener noreferrer">
                     View full job through Adzuna
+                    
+
                   </a>
                 </p>
+                <SaveListingButton job={job} track="audio" onSave={onSave} />
               </article>
             ))}
           </div>

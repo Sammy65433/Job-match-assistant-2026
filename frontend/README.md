@@ -1,16 +1,60 @@
-# React + Vite
+# Job Match Assistant Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React/Vite interface for finding listings and managing a personal job-review workspace.
 
-Currently, two official plugins are available:
+## Views
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Find jobs**
 
-## React Compiler
+- Select software, data, or audio.
+- Search real remote software/data listings through the Express backend.
+- Search Adzuna audio listings by Los Angeles or Newark area.
+- Open each listing on its source site to review full requirements.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Resume and saved jobs**
 
-## Expanding the Oxlint configuration
+- Paste and preview a job using manually entered required skills.
+- Save pasted jobs by career track.
+- Enter editable resume-evidence text.
+- Check limited keyword overlap for saved jobs.
+- Manually update saved-job application status.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+These are two views on the same URL, not separate browser routes.
+
+## Run locally
+
+From `frontend/`:
+
+```bash
+npm install
+npm run dev
+```
+
+Point `VITE_API_URL` to the local backend, typically:
+
+```dotenv
+VITE_API_URL=http://127.0.0.1:5003
+```
+
+Vite prints the frontend browser URL. Its port can vary. Never put MongoDB URIs, Adzuna credentials, resumes, or other secrets in `VITE_` variables.
+
+## Main source files
+
+| File | Purpose |
+| --- | --- |
+| `src/App.jsx` | View state, API calls, and shared career-track state |
+| `src/JobSearchForm.jsx` | Real-job search form |
+| `src/RemoteJobs.jsx` | Remote software/data results |
+| `src/AudioJobs.jsx` | Adzuna audio-area results |
+| `src/ResumeComparison.jsx` | Editable resume evidence and manual phrase checks |
+| `src/ResumeJobCheck.jsx` | Keyword-overlap control currently used with saved jobs |
+| `src/tracks.js` | Track labels, starter skills, and skill parser |
+
+## Limitations
+
+- The frontend does not submit applications or upload resume files.
+- Discovery listings are not verified resume matches.
+- Editable skills do not yet filter discovered listings.
+- Salary filtering for real listings is not available.
+- A job source may provide no description; a title-only keyword check is too limited to call a job match.
+- Resume text entered into the page is sent to the local backend when checked. Avoid including contact details until proper authentication and access controls exist.
