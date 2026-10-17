@@ -2,6 +2,10 @@ import { cached } from "./cache.js";
 import { getRemotiveJobs, selectRemotiveJobs } from "./remotive.js";
 import { getJobicyJobs } from "./jobicy.js";
 import { getHimalayasJobs } from "./himalayas.js";
+import { getMuseJobs } from "./muse.js";
+import { getAllBoardJobs } from "./boards.js";
+import { COMPANY_BOARDS } from "../data/companyBoards.js";
+import { runLoaders, statsKey } from "./loaders.js";
 
 const HOUR = 60 * 60 * 1000;
 
@@ -11,11 +15,17 @@ const SOFTWARE_TITLE =
 const DATA_TITLE =
   /\b(data analyst|business analyst|business intelligence analyst|bi analyst|reporting analyst|analytics analyst|data analytics analyst|etl analyst)\b/i;
 
-const SENIOR_TITLE =
+export const SENIOR_TITLE =
   /\b(senior|sr\.?|staff|principal|lead|head|director|manager|architect|vp|vice president|chief)\b/i;
 
-const ENTRY_TITLE =
+export const ENTRY_TITLE =
   /\b(junior|jr\.?|entry[\s-]?level|associate|graduate|new grad)\b/i;
+
+export function titleMatchesTrack(title, track) {
+  if (track === "software") return SOFTWARE_TITLE.test(title);
+  if (track === "data") return DATA_TITLE.test(title);
+  return false;
+} // end titleMatchesTrack
 
 /* ---------- Location rules: US and Canada only for now ---------- */
 
@@ -31,15 +41,10 @@ const OTHER_REGION_LOCATION =
 
 export function classifyLocation(location) {
   const text = typeof location === "string" ? location.trim() : "";
-
-  // turn "U.S." and "U.S.A." into "usa" so the pattern can see them
   const normalized = text.replace(/u\.s\.a?\.?/gi, "usa");
 
   if (US_LOCATION.test(normalized)) return "us-mentioned";
   if (CANADA_LOCATION.test(normalized)) return "canada-mentioned";
-
-  // "Worldwide" or a blank location may include the US or Canada,
-  // but the full listing still has to be checked.
   if (GLOBAL_LOCATION.test(normalized)) return "verify-location";
   if (OTHER_REGION_LOCATION.test(normalized)) return "outside-region";
 
@@ -58,13 +63,7 @@ function classifyJob(job, track) {
   const title = typeof job.title === "string" ? job.title.trim() : "";
 
   if (!title || SENIOR_TITLE.test(title)) return null;
-
-  const matchesRole =
-    track === "software"
-      ? SOFTWARE_TITLE.test(title)
-      : DATA_TITLE.test(title);
-
-  if (!matchesRole) return null;
+  if (!titleMatchesTrack(title, track)) return null;
 
   const locationGroup = classifyLocation(job.location);
 
@@ -73,9 +72,10 @@ function classifyJob(job, track) {
   return {
     ...job,
     title,
-    levelGroup: ENTRY_TITLE.test(title)
-      ? "explicit-entry-level"
-      : "level-unspecified",
+    levelGroup:
+      job.entryLevelListed || ENTRY_TITLE.test(title)
+        ? "explicit-entry-level"
+        : "level-unspecified",
     locationGroup
   };
 } // end classifyJob
@@ -93,6 +93,17 @@ async function loadRemotive(track) {
   })); // end map
 } // end loadRemotive
 
+async function loadRemoteBoards() {
+  const { jobs, errors } = await cached("boards-all", 3 * HOUR, () =>
+    getAllBoardJobs(COMPANY_BOARDS)
+  );
+
+  return {
+    jobs: jobs.filter((job) => /remote/i.test(job.location)),
+    errors
+  };
+} // end loadRemoteBoards
+
 export async function discoverRemoteJobs(track) {
   if (track !== "software" && track !== "data") {
     throw new Error("Choose the software or data track.");
@@ -108,33 +119,18 @@ export async function discoverRemoteJobs(track) {
     {
       name: "Himalayas",
       run: () => cached("himalayas", 6 * HOUR, getHimalayasJobs)
-    }
+    },
+    {
+      name: "The Muse",
+      run: () =>
+        cached(`muse-${track}-remote`, 3 * HOUR, () =>
+          getMuseJobs({ track, location: "Flexible / Remote" })
+        )
+    },
+    { name: "Company boards", run: () => loadRemoteBoards() }
   ]; // end loaders
 
-  const results = await Promise.allSettled(
-    loaders.map((loader) => loader.run())
-  );
-
-  const jobs = [];
-  const errors = [];
-  const stats = {};
-
-  loaders.forEach((loader) => {
-    stats[loader.name] = { fetched: 0, kept: 0 };
-  }); // end forEach stats setup
-
-  results.forEach((result, index) => {
-    const name = loaders[index].name;
-
-    if (result.status === "fulfilled") {
-      const list = Array.isArray(result.value) ? result.value : [];
-      stats[name].fetched = list.length;
-      jobs.push(...list);
-    } else {
-      errors.push(`${name}: ${result.reason.message}`);
-    } // end if fulfilled
-  }); // end forEach results
-
+  const { jobs, errors, stats } = await runLoaders(loaders);
   const seen = new Set();
 
   const filteredJobs = jobs
@@ -161,7 +157,8 @@ export async function discoverRemoteJobs(track) {
     }); // end sort
 
   filteredJobs.forEach((job) => {
-    if (stats[job.source]) stats[job.source].kept += 1;
+    const key = statsKey(job);
+    if (stats[key]) stats[key].kept += 1;
   }); // end forEach kept
 
   return { jobs: filteredJobs, errors, stats };

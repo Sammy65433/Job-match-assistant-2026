@@ -1,3 +1,13 @@
+function htmlToText(html) {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 10000);
+} // end htmlToText
+
 export async function getJobicyJobs(track) {
   const tag = track === "data" ? "sql" : "javascript";
   const url = `https://jobicy.com/api/v2/remote-jobs?count=50&tag=${tag}`;
@@ -10,8 +20,6 @@ export async function getJobicyJobs(track) {
   const data = await response.json();
   const list = Array.isArray(data.jobs) ? data.jobs : [];
 
-  // console.log("Jobicy first job:", list[0]); // CHECK 1
-
   return list.map((job) => ({
     id: `jobicy-${job.id}`,
     title: job.jobTitle || job.title || "",
@@ -19,10 +27,9 @@ export async function getJobicyJobs(track) {
     location: job.jobGeo || "",
     url: job.url,
     description:
-  typeof job.jobDescription === "string"
-    ? job.jobDescription
-    : "",
+      typeof job.jobDescription === "string"
+        ? htmlToText(job.jobDescription)
+        : "",
     source: "Jobicy"
-    
   })); // end map
-} // end getJobicyJobsx
+} // end getJobicyJobs

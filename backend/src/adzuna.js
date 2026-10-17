@@ -136,3 +136,60 @@ export async function searchAdzunaAudioJobs(area) {
   cache.set(area, { time: Date.now(), jobs });
   return jobs;
 }
+export async function searchAdzunaJobs(what, area) {
+  const search = SEARCHES[area];
+
+  if (!search) {
+    throw new Error("Invalid search area.");
+  } // end if invalid area
+
+  const appId = process.env.ADZUNA_APP_ID;
+  const appKey = process.env.ADZUNA_APP_KEY;
+
+  if (!appId || !appKey) {
+    throw new Error("Adzuna credentials are not configured.");
+  } // end if no credentials
+
+  const cacheKey = `${what}|${area}`;
+  const hit = cache.get(cacheKey);
+
+  if (hit && Date.now() - hit.time < CACHE_MS) {
+    return hit.jobs;
+  } // end if cached
+
+  const url = new URL(BASE_URL);
+  url.searchParams.set("app_id", appId);
+  url.searchParams.set("app_key", appKey);
+  url.searchParams.set("what", what);
+  url.searchParams.set("where", search.where);
+  url.searchParams.set("distance", "40");
+  url.searchParams.set("results_per_page", "50");
+  url.searchParams.set("sort_by", "date");
+
+  const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+
+  if (!response.ok) {
+    throw new Error(`Adzuna returned ${response.status}`);
+  } // end if not ok
+
+  const data = await response.json();
+
+  if (!Array.isArray(data.results)) {
+    throw new Error("Unexpected Adzuna response.");
+  } // end if unexpected
+
+  const jobs = data.results
+    .filter((job) => validRedirectUrl(job.redirect_url))
+    .map((job) => ({
+      id: `adzuna-${job.id}`,
+      title: job.title || "",
+      company: job.company?.display_name || "Company not listed",
+      location: job.location?.display_name || search.label,
+      description: job.description || "",
+      url: job.redirect_url,
+      source: "Adzuna"
+    })); // end map
+
+  cache.set(cacheKey, { time: Date.now(), jobs });
+  return jobs;
+} // end searchAdzunaJobs

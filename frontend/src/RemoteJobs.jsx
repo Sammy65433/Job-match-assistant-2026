@@ -1,3 +1,9 @@
+import {
+  BriefcaseBusiness,
+  ExternalLink,
+  MapPin,
+  SearchCheck
+} from "lucide-react";
 import SaveListingButton from "./SaveListingButton.jsx";
 
 const LOCATION_LABELS = {
@@ -10,13 +16,18 @@ function JobCard({ job, track, onSave }) {
   return (
     <article className="job">
       <h3>
+        <BriefcaseBusiness size={18} aria-hidden="true" />
         {job.title} · {job.company || "Company not listed"}
       </h3>
 
-      <p>{job.location || "Location restrictions not specified"}</p>
+      <p>
+        <MapPin size={16} aria-hidden="true" />
+        {job.location || "Location restrictions not specified"}
+      </p>
 
       {job.locationGroup && (
         <p>
+          <MapPin size={16} aria-hidden="true" />
           <strong>Location check:</strong>{" "}
           {LOCATION_LABELS[job.locationGroup] || "Review full listing"}
         </p>
@@ -26,14 +37,11 @@ function JobCard({ job, track, onSave }) {
         Source: {job.source} ·{" "}
         <a href={job.url} target="_blank" rel="noopener noreferrer">
           View job on {job.source}
+          <ExternalLink size={15} aria-hidden="true" />
         </a>
       </p>
 
-      <SaveListingButton
-        job={job}
-        track={track}
-        onSave={onSave}
-      />
+      <SaveListingButton job={job} track={track} onSave={onSave} />
     </article>
   );
 }
@@ -45,7 +53,6 @@ export default function RemoteJobs({
   loading,
   error,
   searched,
-  onLoad,
   onSave
 }) {
   const entryLevelJobs = jobs.filter(
@@ -57,23 +64,24 @@ export default function RemoteJobs({
 
   return (
     <section aria-label="Remote job listings">
-      <h2>Remote jobs</h2>
+      <h2>
+        <SearchCheck size={22} aria-hidden="true" />
+        Remote jobs
+      </h2>
       <p>
-        Job-title and location screening only. Open each listing on its
-        source site to review experience requirements, location
+        Job-title and location screening only. Open each listing on
+        its source site to review experience requirements, location
         eligibility, and whether it is still available.
       </p>
 
       {track === "audio" ? (
         <p>
-          Audio jobs use the separate Adzuna search. These results are
-          for software and data only.
+          Audio jobs use the separate Adzuna search. These results
+          are for software and data only.
         </p>
       ) : (
         <>
-          <button type="button" onClick={onLoad} disabled={loading}>
-            {loading ? "Loading..." : "Load remote jobs"}
-          </button>
+          {loading && <p role="status">Loading remote jobs...</p>}
 
           {error && <p role="alert" className="error">{error}</p>}
 
@@ -92,8 +100,7 @@ export default function RemoteJobs({
               <h3>Explicitly entry-level titles</h3>
               <p>
                 These titles mention junior, entry-level, associate,
-                graduate, or new grad. Check the full listing before
-                applying.
+                graduate, or new grad. Check the full listing.
               </p>
               {entryLevelJobs.map((job) => (
                 <JobCard
@@ -110,7 +117,7 @@ export default function RemoteJobs({
             <>
               <h3>Level unspecified</h3>
               <p>
-                These titles do not specify a level. They may still
+                These titles do not specify a level and may still
                 require substantial experience.
               </p>
               {unspecifiedJobs.map((job) => (

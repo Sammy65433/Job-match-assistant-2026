@@ -1,4 +1,13 @@
 import { useEffect, useState } from "react";
+import {
+  Bookmark,
+  BriefcaseBusiness,
+  ClipboardPaste,
+  FileCheck2,
+  LogOut,
+  Search
+} from "lucide-react";
+
 import "./App.css";
 import { TRACKS, parseSkills } from "./tracks.js";
 import JobSearchForm from "./JobSearchForm.jsx";
@@ -6,9 +15,9 @@ import RemoteJobs from "./RemoteJobs.jsx";
 import AudioJobs from "./AudioJobs.jsx";
 import ResumeComparison from "./ResumeComparison.jsx";
 import ResumeJobCheck from "./ResumeJobCheck.jsx";
+import LoginPage from "./LoginPage.jsx";
+import { apiRequest } from "./api.js";
 import { descriptionText } from "./descriptionText.js";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5003";
 
 const STATUS_LABELS = {
   saved: "Saved",
@@ -19,15 +28,16 @@ const STATUS_LABELS = {
 };
 
 const TABS = [
-  ["jobs", "Find jobs"],
-  ["preview", "Preview a pasted job"],
-  ["resume", "Resume evidence"],
-  ["saved", "Saved jobs"]
+  ["jobs", "Find jobs", Search],
+  ["preview", "Preview a pasted job", ClipboardPaste],
+  ["resume", "Resume evidence", FileCheck2],
+  ["saved", "Saved jobs", Bookmark]
 ];
 
 export default function App() {
   const [page, setPage] = useState("jobs");
   const [track, setTrack] = useState("software");
+  const [auth, setAuth] = useState(null);
 
   const [skillsByTrack, setSkillsByTrack] = useState({
     software: TRACKS.software.defaultSkills,
@@ -61,22 +71,29 @@ export default function App() {
   const [company, setCompany] = useState("");
   const [description, setDescription] = useState("");
   const [requiredSkillText, setRequiredSkillText] = useState("");
+    const [sessionNotice, setSessionNotice] = useState("");
 
   const skillText = skillsByTrack[track];
 
-  async function request(path, options) {
-    const response = await fetch(`${API_URL}${path}`, options);
-    const data = await response.json();
+    async function request(path, options = {}) {
+    const isPrivate =
+      path.startsWith("/api/saved-jobs") ||
+      path.startsWith("/api/resume/") ||
+      path === "/api/matches/custom";
 
-    if (!response.ok) {
-      throw new Error(
-        data.error || `Request failed (${response.status}).`
-      );
-    }
+    if (isPrivate && !auth?.token) {
+      throw new Error("Sign in to use this feature.");
+    } // end if no token
 
-    return data;
-  }
-
+    try {
+      return await apiRequest(path, options, isPrivate ? auth.token : null);
+    } catch (error) {
+      if (isPrivate && error.status === 401) {
+        changeAuth(null, "Your session expired. Please sign in again.");
+      } // end if expired
+      throw error;
+    } // end try/catch
+  } // end request
   function post(path, body) {
     return request(path, {
       method: "POST",
@@ -86,7 +103,11 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (page !== "saved") return;
+    if (page !== "saved" || !auth?.token) {
+      setSavedJobs([]);
+      setSavedJobsLoading(false);
+      return;
+    }
 
     let cancelled = false;
 
@@ -95,17 +116,11 @@ export default function App() {
       setWorkspaceError("");
 
       try {
-        const response = await fetch(
-          `${API_URL}/api/saved-jobs?track=${encodeURIComponent(track)}`
+        const data = await apiRequest(
+          `/api/saved-jobs?track=${encodeURIComponent(track)}`,
+          {},
+          auth.token
         );
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.error ||
-              `Could not load saved jobs (${response.status}).`
-          );
-        }
 
         if (!cancelled) {
           setSavedJobs(
@@ -127,8 +142,16 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [page, track]);
+  }, [page, track, auth?.token]);
 
+  function changeAuth(nextAuth) {
+  setAuth(nextAuth);
+  setSavedJobs([]);
+  setWorkspaceError("");
+  setFormError("");
+  setResumeTextByTrack({ software: "", data: "", audio: "" });
+  setPage("jobs");
+}
   function changeTrack(nextTrack) {
     setTrack(nextTrack);
     setSavedJobs([]);
@@ -249,30 +272,34 @@ export default function App() {
   }
 
   async function saveListing(job, listingTrack) {
-    if (!job.url || !job.source || !job.id) {
-      throw new Error("This listing is missing a source link.");
-    }
-
-    const data = await post("/api/saved-jobs/from-listing", {
-      track: listingTrack,
-      title: job.title,
-      company: job.company || "Company not listed",
-      description: job.description || "",
-      source: job.source,
-      sourceJobId: String(job.id),
-      url: job.url
-    });
-
-    if (listingTrack === track) {
-      setSavedJobs((current) =>
-        current.some((saved) => saved._id === data.savedJob._id)
-          ? current
-          : [data.savedJob, ...current]
-      );
-    }
-
-    return data.savedJob;
+  if (!job.url || !job.source || !job.id) {
+    throw new Error("This listing is missing a source link.");
   }
+
+  const data = await post("/api/saved-jobs/from-listing", {
+    
+    track: listingTrack,
+    title: String(job.title || "").trim().slice(0, 150),
+    company: String(job.company || "Company not listed")
+      .trim()
+      .slice(0, 150),
+    description: descriptionText(job.description || "").slice(0, 10000),
+    source: job.source,
+    sourceJobId: String(job.id).slice(0, 200),
+    url: job.url
+  });
+  
+
+  if (listingTrack === track) {
+    setSavedJobs((current) =>
+      current.some((saved) => saved._id === data.savedJob._id)
+        ? current
+        : [data.savedJob, ...current]
+    );
+  }
+
+  return data.savedJob;
+}
 
   async function updateStatus(jobId, status) {
     setWorkspaceError("");
@@ -297,26 +324,46 @@ export default function App() {
     }
   }
 
+  if (!auth) {
+    return (
+            <LoginPage
+        request={(path, options) => apiRequest(path, options)}
+        onAuthenticated={changeAuth}
+        notice={sessionNotice}
+      />
+    );
+  }
+
   return (
     <main className="page">
-      <h1>Job Match Assistant</h1>
+      <h1 className="app-title">
+        <BriefcaseBusiness size={42} aria-hidden="true" />
+        Job Match Assistant
+      </h1>
       <p>
         Find real listings, review requirements, and track jobs you
         save. Discovery results are not verified resume matches.
       </p>
 
       <nav aria-label="App views" className="page-nav">
-        {TABS.map(([id, label]) => (
+        {TABS.map(([id, label, Icon]) => (
           <button
             key={id}
             type="button"
             onClick={() => setPage(id)}
             aria-current={page === id ? "page" : undefined}
           >
+            <Icon size={18} aria-hidden="true" />
             {label}
           </button>
         ))}
+        <button type="button" onClick={() => changeAuth(null)}>
+          <LogOut size={18} aria-hidden="true" />
+          Sign out
+        </button>
       </nav>
+
+      <p>Signed in as {auth.user.email}</p>
 
       <label htmlFor="career-track">Career track</label>
       <select
@@ -362,7 +409,6 @@ export default function App() {
                 loading={remoteLoading}
                 error={remoteError}
                 searched={remoteSearched}
-                onLoad={loadRemoteJobs}
                 onSave={saveListing}
               />
             )}
@@ -372,7 +418,18 @@ export default function App() {
 
       {page === "preview" && (
         <section aria-label="Custom job preview">
-          <h2>Preview a pasted job</h2>
+          <h2>
+            <ClipboardPaste size={22} aria-hidden="true" />
+            Preview a pasted job
+          </h2>
+          <p>
+  Found a job outside this app? Enter its title, company, description,
+  and required skills below. The preview compares those required skills
+  with your editable career-track skill list. The percentage is a
+  screening estimate, not proof that you qualify. You can save the job
+  afterward.
+</p>
+
           <p>
             Enter required skills from the listing. This preview uses
             your editable skills, not verified resume evidence.
@@ -476,9 +533,13 @@ export default function App() {
           )}
 
           <section aria-label="Saved jobs">
-            <h2>Saved jobs: {TRACKS[track].label}</h2>
+            <h2>
+              <Bookmark size={22} aria-hidden="true" />
+              Saved jobs: {TRACKS[track].label}
+            </h2>
 
             {savedJobsLoading && <p>Loading saved jobs...</p>}
+
             {!savedJobsLoading &&
               !workspaceError &&
               savedJobs.length === 0 && (
@@ -492,21 +553,21 @@ export default function App() {
                 </h3>
 
                 {job.description && (
-  <>
-    <p>
-      {descriptionText(job.description).slice(0, 180)}
-      {descriptionText(job.description).length > 180 ? "…" : ""}
-    </p>
-
-    <details>
-      <summary>View job description</summary>
-      <p style={{ whiteSpace: "pre-line" }}>
-        {descriptionText(job.description)}
-      </p>
-    </details>
-  </>
-)}
-
+                  <>
+                    <p>
+                      {descriptionText(job.description).slice(0, 180)}
+                      {descriptionText(job.description).length > 180
+                        ? "…"
+                        : ""}
+                    </p>
+                    <details>
+                      <summary>View job description</summary>
+                      <p style={{ whiteSpace: "pre-line" }}>
+                        {descriptionText(job.description)}
+                      </p>
+                    </details>
+                  </>
+                )}
 
                 <p>
                   <strong>Required:</strong>{" "}
@@ -555,7 +616,8 @@ export default function App() {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Open application on {job.source || "source site"}
+                      Open application on{" "}
+                      {job.source || "source site"}
                     </a>
                   </p>
                 )}
@@ -563,7 +625,9 @@ export default function App() {
                 {job.status !== "applied" && (
                   <button
                     type="button"
-                    onClick={() => updateStatus(job._id, "applied")}
+                    onClick={() =>
+                      updateStatus(job._id, "applied")
+                    }
                   >
                     Mark applied
                   </button>

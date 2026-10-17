@@ -10,17 +10,48 @@ import { discoverRemoteJobs } from "./discover.js";
 import { searchAdzunaAudioJobs } from "./adzuna.js";
 import { compareResume } from "./resumeCompare.js";
 import { keywordOverlap } from "./keywordOverlap.js";
+import { signUp, signIn, currentUser } from "./auth.js";
+import { requireJobUser } from "./middleware/requireJobUser.js";
+import { signInWithGoogle } from "./googleAuth.js";
+import rateLimit from "express-rate-limit";
+import { discoverInPersonJobs } from "./inPerson.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 5003;
+const tracks = ["software", "data", "audio"];
+const statuses = ["saved", "ready", "applied", "interview", "rejected"];
+const sources = ["Remotive", "Jobicy", "Himalayas", "Adzuna", "The Muse"];
 
-app.use(cors());
+
+const allowedOrigins = [
+  process.env.FRONTEND_ORIGIN,
+  process.env.NODE_ENV !== "production" && "http://localhost:5173",
+  process.env.NODE_ENV !== "production" && "http://127.0.0.1:5173"
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origin not allowed."));
+    }
+  })
+);
 app.use(express.json({ limit: "100kb" }));
 
-const TRACKS = ["software", "data", "audio"];
-const STATUSES = ["saved", "ready", "applied", "interview", "rejected"];
-const LISTING_SOURCES = ["Remotive", "Jobicy", "Himalayas", "Adzuna"];
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many attempts. Try again later." }
+}); // end authLimiter
+
+app.use("/api/auth", authLimiter);
 function validSkills(skills) {
   return (
     Array.isArray(skills) &&
@@ -36,7 +67,7 @@ function validSkills(skills) {
 }
 
 function validTrack(track) {
-  return TRACKS.includes(track);
+  return tracks.includes(track);
 }
 
 function validListingUrl(value) {
@@ -55,29 +86,26 @@ function validListingUrl(value) {
   }
 }
 
-function cleanSkills(skills) {
-  return skills.map((skill) => skill.trim());
-}
-
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+app.post("/api/auth/signup", signUp);
+app.post("/api/auth/google", signInWithGoogle);
+app.post("/api/auth/login", signIn);
+app.get("/api/auth/me", requireJobUser, currentUser);
 
 app.get("/api/jobs", (_req, res) => {
   res.json(jobs);
 });
 
 app.post("/api/matches", (req, res) => {
-  const { skills } = req.body ?? {};
-
-  if (!validSkills(skills)) {
-    return res.status(400).json({
-      error: "Provide skills as a nonempty array of skill names."
-    });
+  if (!validSkills(req.body?.skills)) {
+    return res.status(400).json({ error: "Invalid skills." });
   }
 
   const matches = jobs
-    .map((job) => matchJob(job, { skills }))
+    .map((job) => matchJob(job, { skills: req.body.skills }))
     .sort((a, b) => b.score - a.score);
 
   res.json({
@@ -86,7 +114,7 @@ app.post("/api/matches", (req, res) => {
   });
 });
 
-app.post("/api/matches/custom", (req, res) => {
+app.post("/api/matches/custom", requireJobUser, (req, res) => {
   const {
     skills,
     title,
@@ -97,6 +125,7 @@ app.post("/api/matches/custom", (req, res) => {
 
   if (
     !validSkills(skills) ||
+    !validSkills(requiredSkills) ||
     typeof title !== "string" ||
     !title.trim() ||
     title.length > 150 ||
@@ -105,109 +134,124 @@ app.post("/api/matches/custom", (req, res) => {
     company.length > 150 ||
     typeof description !== "string" ||
     !description.trim() ||
-    description.length > 10000 ||
-    !validSkills(requiredSkills)
+    description.length > 10000
   ) {
-    return res.status(400).json({
-      error:
-        "Provide skills, title, company, description, and requiredSkills."
-    });
+    return res.status(400).json({ error: "Invalid job preview." });
   }
 
-  const job = {
-    id: "custom-preview",
-    title: title.trim(),
-    company: company.trim(),
-    description: description.trim(),
-    requiredSkills: cleanSkills(requiredSkills),
-    location: "Not specified",
-    remote: false,
-    salaryMin: null
-  };
-
-  res.json({ match: matchJob(job, { skills }) });
-});
-
-app.post("/api/saved-jobs/from-listing", async (req, res) => {
-  const {
-    track,
-    title,
-    company,
-    description,
-    source,
-    sourceJobId,
-    url
-  } = req.body ?? {};
-
-  if (
-    !validTrack(track) ||
-    typeof title !== "string" ||
-    !title.trim() ||
-    title.length > 150 ||
-    typeof company !== "string" ||
-    !company.trim() ||
-    company.length > 150 ||
-    typeof description !== "string" ||
-    description.length > 10000 ||
-    !LISTING_SOURCES.includes(source) ||
-    typeof sourceJobId !== "string" ||
-    !sourceJobId.trim() ||
-    sourceJobId.length > 200 ||
-    !validListingUrl(url)
-  ) {
-    return res.status(400).json({ error: "Invalid listing." });
-  }
-
-  try {
-    const savedJob = await SavedJob.findOneAndUpdate(
-      { source, sourceJobId: sourceJobId.trim() },
+  res.json({
+    match: matchJob(
       {
-        $setOnInsert: {
-          track,
-          title: title.trim(),
-          company: company.trim(),
-          description: description.trim(),
-          requiredSkills: [],
-          source,
-          sourceJobId: sourceJobId.trim(),
-          url,
-          status: "saved"
-        }
+        id: "custom-preview",
+        title: title.trim(),
+        company: company.trim(),
+        description: description.trim(),
+        requiredSkills: requiredSkills.map((skill) => skill.trim()),
+        location: "Not specified",
+        remote: false,
+        salaryMin: null
       },
-      {
-        upsert: true,
-        returnDocument: "after",
-        runValidators: true
-      }
-    ).lean();
-
-    res.status(201).json({ savedJob });
-  } catch (error) {
-    console.error("Could not save listing:", error);
-    res.status(500).json({ error: "Could not save listing." });
-  }
+      { skills }
+    )
+  });
 });
 
-app.get("/api/saved-jobs", async (req, res) => {
-  const { track } = req.query;
-
-  if (!validTrack(track)) {
+app.get("/api/saved-jobs", requireJobUser, async (req, res) => {
+  if (!validTrack(req.query.track)) {
     return res.status(400).json({ error: "Invalid career track." });
   }
 
   try {
-    const savedJobs = await SavedJob.find({ track })
+    const savedJobs = await SavedJob.find({
+      ownerId: req.jobUser.id,
+      track: req.query.track
+    })
       .sort({ createdAt: -1 })
       .lean();
 
-    res.json({ savedJobs });
+    return res.json({ savedJobs });
   } catch (error) {
     console.error("Could not load saved jobs:", error);
-    res.status(500).json({ error: "Could not load saved jobs." });
+    return res.status(500).json({
+      error: "Could not load saved jobs."
+    });
   }
 });
 
-app.post("/api/saved-jobs", async (req, res) => {
+app.post(
+  "/api/saved-jobs/from-listing",
+  requireJobUser,
+  async (req, res) => {
+    const {
+      track,
+      title,
+      company,
+      description,
+      source,
+      sourceJobId,
+      url
+    } = req.body ?? {};
+   
+
+
+    if (
+      !validTrack(track) ||
+      typeof title !== "string" ||
+      !title.trim() ||
+      title.length > 150 ||
+      typeof company !== "string" ||
+      !company.trim() ||
+      company.length > 150 ||
+      typeof description !== "string" ||
+      description.length > 10000 ||
+      !sources.includes(source) ||
+      typeof sourceJobId !== "string" ||
+      !sourceJobId.trim() ||
+      sourceJobId.length > 200 ||
+      !validListingUrl(url)
+    ) {
+      return res.status(400).json({ error: "Invalid listing." });
+    }
+
+    try {
+      const savedJob = await SavedJob.findOneAndUpdate(
+        {
+          ownerId: req.jobUser.id,
+          source,
+          sourceJobId: sourceJobId.trim()
+        },
+        {
+          $setOnInsert: {
+            ownerId: req.jobUser.id,
+            track,
+            title: title.trim(),
+            company: company.trim(),
+            description: description.trim(),
+            requiredSkills: [],
+            source,
+            sourceJobId: sourceJobId.trim(),
+            url,
+            status: "saved"
+          }
+        },
+        {
+          upsert: true,
+          returnDocument: "after",
+          runValidators: true
+        }
+      ).lean();
+
+      return res.status(201).json({ savedJob });
+    } catch (error) {
+      console.error("Could not save listing:", error);
+      return res.status(500).json({
+        error: "Could not save listing."
+      });
+    }
+  }
+);
+
+app.post("/api/saved-jobs", requireJobUser, async (req, res) => {
   const {
     track,
     title,
@@ -230,77 +274,81 @@ app.post("/api/saved-jobs", async (req, res) => {
     !validSkills(requiredSkills)
   ) {
     return res.status(400).json({
-      error:
-        "Provide a track, title, company, description, and required skills."
+      error: "Invalid saved job."
     });
   }
 
   try {
     const savedJob = await SavedJob.create({
+      ownerId: req.jobUser.id,
       track,
       title: title.trim(),
       company: company.trim(),
       description: description.trim(),
-      requiredSkills: cleanSkills(requiredSkills)
+      requiredSkills: requiredSkills.map((skill) => skill.trim())
     });
 
-    res.status(201).json({ savedJob });
+    return res.status(201).json({ savedJob });
   } catch (error) {
     console.error("Could not save job:", error);
-    res.status(500).json({ error: "Could not save job." });
-  }
-});
-
-app.patch("/api/saved-jobs/:id/status", async (req, res) => {
-  const { status } = req.body ?? {};
-
-  if (!STATUSES.includes(status)) {
-    return res.status(400).json({ error: "Invalid status." });
-  }
-
-  if (!mongoose.isValidObjectId(req.params.id)) {
-    return res.status(400).json({ error: "Invalid job id." });
-  }
-
-  try {
-    const currentJob = await SavedJob.findById(req.params.id);
-
-    if (!currentJob) {
-      return res.status(404).json({
-        error: "Saved job not found."
-      });
-    }
-
-    const update = { status };
-
-    if (status === "applied" && !currentJob.appliedAt) {
-      update.appliedAt = new Date();
-    } else if (status === "saved" || status === "ready") {
-      update.appliedAt = null;
-    }
-
-    const savedJob = await SavedJob.findByIdAndUpdate(
-      req.params.id,
-      { $set: update },
-      {
-        returnDocument: "after",
-        runValidators: true
-      }
-    ).lean();
-
-    res.json({ savedJob });
-  } catch (error) {
-    console.error("Could not update saved job:", error);
-    res.status(500).json({
-      error: "Could not update saved job."
+    return res.status(500).json({
+      error: "Could not save job."
     });
   }
 });
 
-app.get("/api/discover/remote", async (req, res) => {
-  const { track } = req.query;
+app.patch(
+  "/api/saved-jobs/:id/status",
+  requireJobUser,
+  async (req, res) => {
+    const { status } = req.body ?? {};
 
-  if (track !== "software" && track !== "data") {
+    if (!statuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status." });
+    }
+
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: "Invalid job id." });
+    }
+
+    try {
+      const currentJob = await SavedJob.findOne({
+        _id: req.params.id,
+        ownerId: req.jobUser.id
+      });
+
+      if (!currentJob) {
+        return res.status(404).json({
+          error: "Saved job not found."
+        });
+      }
+
+      const update = { status };
+
+      if (status === "applied" && !currentJob.appliedAt) {
+        update.appliedAt = new Date();
+      } else if (status === "saved" || status === "ready") {
+        update.appliedAt = null;
+      }
+
+      const savedJob = await SavedJob.findOneAndUpdate(
+        { _id: req.params.id, ownerId: req.jobUser.id },
+        { $set: update },
+        { returnDocument: "after", runValidators: true }
+      ).lean();
+
+      return res.json({ savedJob });
+    } catch (error) {
+      console.error("Could not update saved job:", error);
+      return res.status(500).json({
+        error: "Could not update saved job."
+      });
+    }
+  }
+);
+
+app.get("/api/discover/remote", async (req, res) => {
+  if (!["software", "data"].includes(req.query.track)) {
     return res.status(400).json({
       error: "Choose the software or data track."
     });
@@ -308,78 +356,124 @@ app.get("/api/discover/remote", async (req, res) => {
 
   try {
     const { jobs: found, errors, stats } =
-      await discoverRemoteJobs(track);
+      await discoverRemoteJobs(req.query.track);
 
-    res.json({ track, jobs: found, errors, stats });
+    return res.json({
+      track: req.query.track,
+      jobs: found,
+      errors,
+      stats
+    });
   } catch (error) {
     console.error("Could not discover remote jobs:", error);
-    res.status(502).json({
+    return res.status(502).json({
       error: "Could not fetch job listings."
     });
   }
 });
+app.get("/api/discover/in-person", async (req, res) => {
+  const { track, area } = req.query;
 
-app.get("/api/discover/audio", async (req, res) => {
-  const { area } = req.query;
+  if (!["software", "data"].includes(track)) {
+    return res.status(400).json({ error: "Choose the software or data track." });
+  } // end if invalid track
 
   if (!["los_angeles", "newark"].includes(area)) {
+    return res.status(400).json({ error: "Choose los_angeles or newark." });
+  } // end if invalid area
+
+  try {
+    const { jobs: found, errors, stats } = await discoverInPersonJobs(track, area);
+    return res.json({ track, area, jobs: found, errors, stats });
+  } catch (error) {
+    console.error("Could not discover in-person jobs:", error.message);
+    return res.status(502).json({ error: "Could not fetch job listings." });
+  } // end try/catch
+}); // end route
+
+app.get("/api/discover/audio", async (req, res) => {
+  if (!["los_angeles", "newark"].includes(req.query.area)) {
     return res.status(400).json({
       error: "Choose los_angeles or newark."
     });
   }
 
   try {
-    const found = await searchAdzunaAudioJobs(area);
+    const found = await searchAdzunaAudioJobs(req.query.area);
 
-    res.json({
+    return res.json({
       source: "Adzuna",
-      area,
+      area: req.query.area,
       attribution:
         "Open each listing using its Adzuna redirect link.",
       jobs: found
     });
   } catch (error) {
-    console.error(
-      "Could not search Adzuna audio jobs:",
-      error.message
-    );
-    res.status(502).json({
+    console.error("Audio discovery failed:", error.message);
+    return res.status(502).json({
       error: "Could not fetch audio jobs."
     });
   }
 });
 
-app.post("/api/resume/compare-preview", (req, res) => {
-  const result = compareResume(req.body);
+app.post(
+  "/api/resume/compare-preview",
+  requireJobUser,
+  (req, res) => {
+    const result = compareResume(req.body);
 
-  if (result.error) {
-    return res.status(400).json(result);
+    return result.error
+      ? res.status(400).json(result)
+      : res.json(result);
   }
+);
 
-  res.json(result);
-});
+app.post(
+  "/api/resume/keyword-overlap",
+  requireJobUser,
+  (req, res) => {
+    const result = keywordOverlap(req.body);
 
-app.post("/api/resume/keyword-overlap", (req, res) => {
-  const result = keywordOverlap(req.body);
-
-  if (result.error) {
-    return res.status(400).json(result);
+    return result.error
+      ? res.status(400).json(result)
+      : res.json(result);
   }
+);
+app.use((error, _req, res, _next) => {
+  if (error.message === "Origin not allowed.") {
+    return res.status(403).json({ error: "Origin not allowed." });
+  } // end if cors
 
-  res.json(result);
-});
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({ error: "Request is too large." });
+  } // end if too large
+
+  if (error.type === "entity.parse.failed") {
+    return res.status(400).json({ error: "Invalid JSON." });
+  } // end if bad json
+
+  console.error("Unexpected error:", error.message);
+  return res.status(500).json({ error: "Something went wrong." });
+}); // end error handler
 
 async function start() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error("Set MONGODB_URI in backend/.env.");
-  }
+  if (!process.env.MONGODB_URI || !process.env.JOB_AUTH_SECRET) {
+    throw new Error("MONGODB_URI and JOB_AUTH_SECRET must be configured.");
+  } // end if missing env
+
+  if (process.env.JOB_AUTH_SECRET.length < 32) {
+    throw new Error("JOB_AUTH_SECRET must be at least 32 characters.");
+  } // end if short secret
 
   await mongoose.connect(process.env.MONGODB_URI);
 
-  app.listen(port, "127.0.0.1", () => {
-    console.log(`Job Match API listening on http://127.0.0.1:${port}`);
-  });
-}
+  const host = process.env.HOST || "127.0.0.1";
+
+  app.listen(port, host, () => {
+    console.log(`Job Match API listening on ${host}:${port}`);
+  }); // end listen
+} // end start
+
 
 start().catch((error) => {
   console.error("Could not start Job Match API:", error);
