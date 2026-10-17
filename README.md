@@ -4,7 +4,7 @@ A full-stack job discovery and application tracker built with **React/Vite, Expr
 
 I built this app to organize job searches across software engineering, data analytics, and audio production. It brings listings into one interface, lets users save opportunities, and tracks applications they submit on the employer’s site.
 
-**Live app:** Add the Render frontend URL here after deployment and verification.
+**Live app:** https://job-match-assistant-4frc.onrender.com
 
 ## What it does
 

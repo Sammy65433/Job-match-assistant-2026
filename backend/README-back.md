@@ -1,45 +1,20 @@
 # Job Match Assistant Backend
 
-Express and MongoDB backend for a local job discovery and tracking prototype. It retrieves job listings, stores pasted jobs, and provides limited skill and keyword checks. It does not submit applications or verify that a candidate qualifies.
+Express API and MongoDB data layer for account access, job discovery, saved listings, and manual application tracking.
 
-## Current capabilities
+**Live backend:** https://job-match-assistant-backend.onrender.com
 
-- Retrieves remote software and data listings through Remotive, Jobicy, and Himalayas adapters.
-- Searches Adzuna for audio-related jobs near Los Angeles or Newark/NYC.
-- Filters remote listings by job title, apparent seniority, and location text. A title labeled entry-level or a location mentioning the USA is **not verified eligibility**.
-- Groups Adzuna audio results by title and short-preview relevance. These groups are search aids, not resume matches.
-- Stores manually pasted jobs by career track in MongoDB and tracks a manually selected application status.
-- Compares manually entered required skills with supplied skills.
-- Checks whether phrases or profile keywords appear in supplied resume text. Keyword overlap is **not** a qualification score.
-- Keeps the three fictional jobs in `data/jobs.js` for test use. The frontend's real-job search does not use them.
+## What it does
 
-A dummy saved job remained after refresh, confirming MongoDB persistence. The keyword-overlap endpoint passed a dummy `curl` check. The most recent Jobicy adapter change adds `jobDescription`, but whether that field is populated in returned listings still needs checking.
+- Verifies email/password sign-in and Google ID tokens, then issues app session tokens.
+- Restricts saved jobs and resume-check routes to authenticated users.
+- Scopes MongoDB saved-job reads and status updates to the verified account.
+- Finds remote software/data listings through Remotive, Jobicy, Himalayas, The Muse, and configured company-board adapters.
+- Provides Adzuna audio searches for Los Angeles and Newark/NYC.
+- Includes an in-person software/data discovery route. Its source coverage and frontend connection still need verification.
+- Supports pasted-job skill previews and limited resume keyword checks.
 
-## Structure
-
-```text
-backend/
-├── data/
-│   └── jobs.js
-├── src/
-│   ├── models/
-│   │   └── SavedJob.js
-│   ├── adzuna.js
-│   ├── cache.js
-│   ├── discover.js
-│   ├── himalayas.js
-│   ├── jobicy.js
-│   ├── keywordOverlap.js
-│   ├── match.js
-│   ├── remotive.js
-│   ├── resumeCompare.js
-│   └── server.js
-├── .env
-├── .env.example
-├── .gitignore
-├── package.json
-└── README.md
-```
+The three fictional listings in `data/jobs.js` are test fixtures, not jobs displayed by the main real-job search.
 
 ## Run locally
 
@@ -50,54 +25,63 @@ npm install
 npm run dev
 ```
 
-The server defaults to `http://127.0.0.1:5003` and requires a MongoDB connection before starting. Configure `PORT`, `MONGODB_URI`, `ADZUNA_APP_ID`, and `ADZUNA_APP_KEY` privately in `backend/.env` as applicable. Do not commit credentials, paste them into logs, or put them in frontend `VITE_` variables.
+The local API normally uses port `5003`. Render supplies its own `PORT`; the deployed server must listen on `0.0.0.0`.
+
+Configure server-side variables privately:
+
+| Variable | Purpose |
+| --- | --- |
+| `MONGODB_URI` | Job app database connection |
+| `JOB_AUTH_SECRET` | Signs and verifies app session tokens |
+| `GOOGLE_CLIENT_ID` | Expected audience for verified Google ID tokens |
+| `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` | Adzuna API access |
+| `FRONTEND_ORIGIN` | Exact allowed frontend origin for CORS |
+| `PORT` | Optional locally; supplied by Render |
+| `MUSE_API_KEY` | Optional, only if configured for The Muse adapter |
+
+Never commit `.env` or put backend secrets in Vite variables. Rotate any previously exposed credentials before relying on the deployment.
 
 ## API routes
 
 | Route | Purpose |
 | --- | --- |
-| `GET /api/health` | API health check |
-| `GET /api/jobs` | Fictional test jobs |
-| `POST /api/matches` | Score fictional jobs against supplied skills |
-| `POST /api/matches/custom` | Preview a pasted job using manually entered required skills |
-| `GET /api/saved-jobs?track=software` | List MongoDB jobs for a track |
+| `GET /api/health` | Health check |
+| `POST /api/auth/signup` | Create email/password account |
+| `POST /api/auth/login` | Email/password sign-in |
+| `POST /api/auth/google` | Verify Google ID token and sign in |
+| `GET /api/auth/me` | Retrieve authenticated user |
+| `GET /api/discover/remote?track=software` | Remote software/data search |
+| `GET /api/discover/in-person?track=software&area=los_angeles` | In-person software/data search |
+| `GET /api/discover/audio?area=los_angeles` | Audio search; also accepts `newark` |
+| `GET /api/saved-jobs?track=software` | List this user's saved jobs |
+| `POST /api/saved-jobs/from-listing` | Save a discovered listing |
 | `POST /api/saved-jobs` | Save a manually pasted job |
-| `PATCH /api/saved-jobs/:id/status` | Manually update its tracking status |
-| `GET /api/discover/remote?track=software` | Search aggregated remote software or data listings |
-| `GET /api/discover/audio?area=los_angeles` | Search Adzuna audio listings near Los Angeles or Newark |
-| `POST /api/resume/keyword-overlap` | Check overlap between supplied resume text and available listing text |
+| `PATCH /api/saved-jobs/:id/status` | Update this user's manually tracked status |
+| `POST /api/matches/custom` | Preview manually entered required skills |
+| `POST /api/resume/compare-preview` | Manual resume phrase check |
+| `POST /api/resume/keyword-overlap` | Keyword-overlap check |
 
-Valid tracks are `software`, `data`, and `audio`. The remote-discovery route accepts only `software` and `data`; the separate audio route accepts `los_angeles` or `newark`.
+The repository may also expose `/api/jobs` and `/api/matches` for fictional test fixtures. Those endpoints do not return real vacancies.
 
-Check `server.js` before documenting `/api/resume/compare-preview` as available: the latest pasted `server.js` showed its helper import but did not show that route.
+## Matching limitations
 
-## Matching and discovery limitations
-
-The manual required-skill preview uses equal weighting:
+A pasted job's percentage compares manually entered required skills with an editable skill list:
 
 ```text
-score = matched manually entered required skills / total manually entered required skills × 100
+score = matched entered skills / total entered required skills × 100
 ```
 
-The 60% review flag is a screening estimate, **not proof of qualification**. Discovery listings are not scored using verified required qualifications. Their titles and location strings are screening hints only.
+A 60% screening estimate is **not proof of qualification**. Keyword overlap is likewise not a verified match. Titles, source descriptions, seniority labels, location eligibility, education, and work authorization need review on the original listing.
 
-`/api/resume/keyword-overlap` compares supplied text with the job title and any description supplied to it. API descriptions may be missing, incomplete, truncated, or contain HTML. A keyword appearing in a listing is not necessarily a requirement; a missing phrase does not prove the candidate lacks a skill.
+## Source and operational notes
 
-Application status is a manual tracker. Changing a job to `applied` does not send an application. Review the `appliedAt` behavior before relying on it for corrections: the last shared route set the date when marking `applied` but did not clear it when changing back to `saved`.
+- Link to each listing's original source. Keep required source attribution visible.
+- Some descriptions are missing, truncated, or HTML-formatted. Do not execute source HTML in the browser.
+- Source caches are in memory and reset on restart.
+- `SavedJob` uses a per-owner unique index for discovered listings. Older ownerless saved jobs require deliberate migration.
+- The previously conflicting global `{ source, sourceJobId }` index was removed locally so separate users can save the same listing.
+- Auth endpoints have a rate limiter. Review provider terms and package-audit findings before expanding public use.
 
-## Source handling
+## Deployment checks
 
-Link users to each listing's original source. Remotive requires source attribution and links back to Remotive; its API advises infrequent fetching. Adzuna listings should use the returned redirect URL. Verify each provider's current terms, rate limits, attribution requirements, field mappings, and data retention rules before public use.
-
-The current caches are in memory and reset when the backend restarts. `cache.js` does not yet deduplicate simultaneous requests for the same key.
-
-## Security
-
-The saved-job and resume-check routes do not have authentication. **Keep this backend local; do not deploy it publicly as-is.** Resume text sent for comparison is not saved by the comparison route, but it still reaches the local backend. Keep personal contact details out of test data. Do not commit `.env` or resume files.
-
-## Next checks
-
-1. Confirm whether the updated Jobicy adapter returns populated, usable description text without rendering its HTML as raw HTML.
-2. Confirm which source adapters contribute listings and which return descriptions.
-3. Connect job-card comparisons only after verifying available listing text. Label results *keyword overlap*, not qualification matches.
-4. Add authentication and access controls before any public deployment or stored resume feature.
+The backend `/api/health` returned `{"status":"ok"}` on Render. That confirms the server responds, **not** that every source or private flow works in production. Check deployed Google sign-in, remote/audio discovery, saving, refresh, account isolation, and status updates before calling the full workflow verified.
