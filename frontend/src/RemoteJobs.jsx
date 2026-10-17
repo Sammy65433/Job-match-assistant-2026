@@ -12,6 +12,16 @@ const LOCATION_LABELS = {
   "verify-location": "Location eligibility needs review"
 };
 
+const SOURCE_URLS = {
+  Remotive: "https://remotive.com",
+  Jobicy: "https://jobicy.com",
+  Himalayas: "https://himalayas.app",
+  "The Muse": "https://www.themuse.com",
+  Greenhouse: "https://www.greenhouse.com",
+  Lever: "https://www.lever.co"
+};
+
+
 function JobCard({ job, track, onSave }) {
   return (
     <article className="job">
@@ -132,34 +142,30 @@ export default function RemoteJobs({
           )}
 
           {jobs.length > 0 && (
-            <p>
-              Sources:{" "}
-              <a
-                href="https://remotive.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Remotive
-              </a>
-              ,{" "}
-              <a
-                href="https://jobicy.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Jobicy
-              </a>
-              , and{" "}
-              <a
-                href="https://himalayas.app"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Himalayas
-              </a>
-              .
-            </p>
+  <p>
+    Sources:{" "}
+    {[...new Set(jobs.map((job) => job.source))]
+      .filter(Boolean)
+      .map((source, index) => (
+        <span key={source}>
+          {index > 0 ? ", " : ""}
+          {SOURCE_URLS[source] ? (
+            <a
+              href={SOURCE_URLS[source]}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {source}
+            </a>
+          ) : (
+            source
           )}
+        </span>
+      ))}
+    .
+  </p>
+)}
+
         </>
       )}
     </section>
