@@ -469,9 +469,10 @@ async function start() {
 
   const host = process.env.HOST || "127.0.0.1";
 
-  app.listen(port, host, () => {
-    console.log(`Job Match API listening on ${host}:${port}`);
-  }); // end listen
+  app.listen(port, "0.0.0.0", () => {
+  console.log(`Job Match API listening on port ${port}`);
+});
+ // end listen
 } // end start
 
 
