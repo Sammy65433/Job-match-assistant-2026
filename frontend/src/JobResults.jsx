@@ -129,8 +129,10 @@ export default function JobResults({
   loading,
   error,
   searched,
-  onSave
+  onSave,
+  appliedListingIds = new Set()
 }) {
+
   const strongMatches = byScore(
     jobs.filter(
       (job) => hasScore(job) && job.matchScore >= MATCH_ALERT_THRESHOLD
