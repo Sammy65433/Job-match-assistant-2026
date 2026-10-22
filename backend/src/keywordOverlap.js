@@ -2,6 +2,64 @@ const MAX_RESUME_LENGTH = 20000;
 const MAX_JOB_LENGTH = 15000;
 const MAX_KEYWORDS = 100;
 
+const TRACK_KEYWORDS = {
+  software: [
+    "javascript", "typescript", "react", "node.js", "express",
+    "mongodb", "mongoose", "sql", "postgresql", "python",
+    "java", "html", "css", "git", "rest apis", "graphql",
+    "docker", "aws", "next.js", "vue", "angular", "c#",
+    ".net", "php", "tailwind", "redux"
+  ],
+  data: [
+    "sql", "python", "excel", "tableau", "power bi", "etl",
+    "data analysis", "data visualization", "data modeling",
+    "looker", "snowflake", "dbt", "statistics", "sqlite",
+    "pandas", "bigquery"
+  ],
+  audio: [
+    "pro tools", "logic pro", "ableton live", "audio editing",
+    "audio recording", "vocal tracking", "vocal production",
+    "mixing", "mastering", "sound design", "live sound",
+    "signal flow", "microphone placement", "studio sessions",
+    "podcast production"
+  ]
+};
+export function compareFullJobDescription(body) {
+  const { resumeText, jobDescription, track } = body ?? {};
+
+  if (
+    typeof resumeText !== "string" ||
+    !resumeText.trim() ||
+    resumeText.length > MAX_RESUME_LENGTH ||
+    typeof jobDescription !== "string" ||
+    !jobDescription.trim() ||
+    jobDescription.length > MAX_JOB_LENGTH ||
+    !Object.hasOwn(TRACK_KEYWORDS, track)
+  ) {
+    return { error: "Provide resume text, a job description, and a valid track." };
+  }
+
+  const resume = clean(resumeText);
+  const listing = clean(jobDescription);
+  const detected = TRACK_KEYWORDS[track].filter((word) =>
+    containsPhrase(listing, word)
+  );
+  const matched = detected.filter((word) => containsPhrase(resume, word));
+  const notFound = detected.filter((word) => !containsPhrase(resume, word));
+
+  return {
+    percentage: detected.length
+      ? Math.round((matched.length / detected.length) * 100)
+      : null,
+    matched,
+    notFound,
+    detectedCount: detected.length,
+    note:
+      "Keyword overlap only. This does not verify experience, eligibility, or whether you should apply."
+  };
+}
+
+
 function clean(value) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }

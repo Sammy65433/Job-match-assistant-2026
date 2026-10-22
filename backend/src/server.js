@@ -9,13 +9,17 @@ import SavedJob from "./models/SavedJob.js";
 import { discoverRemoteJobs } from "./discover.js";
 import { searchAdzunaAudioJobs } from "./adzuna.js";
 import { compareResume } from "./resumeCompare.js";
-import { keywordOverlap } from "./keywordOverlap.js";
 import { signUp, signIn, currentUser } from "./auth.js";
 import { requireJobUser } from "./middleware/requireJobUser.js";
 import { signInWithGoogle } from "./googleAuth.js";
 import rateLimit from "express-rate-limit";
 import { discoverHybridJobs } from "./hybrid.js";
 import { withScores } from "./listingScore.js";
+import {
+  keywordOverlap,
+  compareFullJobDescription
+} from "./keywordOverlap.js";
+
 
 const app = express();
 if (process.env.TRUST_PROXY === "1") {
@@ -368,11 +372,10 @@ app.patch("/api/saved-jobs/:id/status", requireJobUser, async (req, res) => {
       update.appliedAt = null;
     }
 
-    if (status !== "interview") {
-      update.interviewAt = null;
-    } else if (hasInterviewAt) {
-      update.interviewAt = parsedInterviewAt;
-    }
+    if (hasInterviewAt) {
+  update.interviewAt = parsedInterviewAt;
+}
+
 
     const savedJob = await SavedJob.findOneAndUpdate(
       { _id: req.params.id, ownerId: req.jobUser.id },
@@ -490,6 +493,15 @@ app.post(
       : res.json(result);
   }
 );
+app.post(
+  "/api/resume/full-description",
+  requireJobUser,
+  (req, res) => {
+    const result = compareFullJobDescription(req.body);
+    return result.error ? res.status(400).json(result) : res.json(result);
+  }
+);
+
 app.use((error, _req, res, _next) => {
   if (error.message === "Origin not allowed.") {
     return res.status(403).json({ error: "Origin not allowed." });

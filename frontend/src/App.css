@@ -1,35 +1,28 @@
+/* ---------- Page shell ---------- */
 .page {
+  --card: rgba(255, 255, 255, 0.05);
+  --card-hover: rgba(255, 255, 255, 0.08);
+  --field: rgba(7, 11, 20, 0.65);
+  --accent: linear-gradient(90deg, #0891b2, #6366f1);
+  --warn: #fbbf24;
+
   width: min(100% - 32px, 1100px);
   min-height: 100vh;
   margin: 0 auto;
   padding: clamp(28px, 5vw, 64px) 0 80px;
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
   line-height: 1.55;
-  color: #172554;
-}
+  color: var(--text);
+} /* end .page */
 
-body:has(.page) {
-  background:
-    radial-gradient(circle at 12% 20%, rgba(34, 211, 238, 0.24), transparent 38%),
-    radial-gradient(circle at 85% 80%, rgba(167, 139, 250, 0.3), transparent 42%),
-    linear-gradient(135deg, #101a35, #172554 55%, #251647);
-  background-attachment: fixed;
-}
-
+/* ---------- Type ---------- */
 .page h1 {
   margin: 0 0 12px;
   font-size: clamp(2.4rem, 5vw, 4.2rem);
   line-height: 1.08;
   letter-spacing: -0.04em;
-  background: none;
   color: #fff;
-}
-
-.page > p {
-  max-width: 780px;
-  color: #dbeafe;
-  font-size: 1.05rem;
-}
+} /* end h1 */
 
 .page h2 {
   display: flex;
@@ -37,98 +30,129 @@ body:has(.page) {
   gap: 10px;
   margin: 42px 0 12px;
   color: #fff;
-}
+} /* end h2 */
 
 .page h2::before {
   content: "";
   width: 4px;
   height: 1.1em;
   border-radius: 4px;
-  background: #22d3ee;
+  background: var(--cyan);
   box-shadow: 0 0 14px rgba(34, 211, 238, 0.55);
-}
+} /* end h2::before */
 
 .page h3 {
   margin: 0;
-  color: #172554;
-}
+  color: #fff;
+} /* end h3 */
 
 .page p {
-  color: #475569;
-}
+  margin: 0;
+  color: var(--muted);
+} /* end p */
 
-.page > section > p,
-.page > section > section > p {
-  color: #dbeafe;
-}
+.page > p {
+  max-width: 780px;
+  margin-bottom: 12px;
+  color: var(--text);
+  font-size: 1.05rem;
+} /* end intro p */
 
 .page strong {
-  color: #172554;
-}
+  color: var(--text);
+} /* end strong */
 
 .page a {
-  color: #0369a1;
+  color: var(--cyan);
   text-underline-offset: 3px;
-}
+} /* end a */
 
 .page a:hover {
-  color: #6d28d9;
-}
+  color: #fff;
+} /* end a:hover */
 
+.page .app-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+} /* end .app-title */
+
+.page .app-title svg {
+  flex-shrink: 0;
+  color: var(--cyan);
+} /* end .app-title svg */
+
+.page .group-title {
+  display: block;
+  margin: 28px 0 8px;
+  color: #fff;
+} /* end .group-title */
+
+/* ---------- Navigation and buttons ---------- */
 .page-nav {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin: 30px 0 24px;
-}
+} /* end .page-nav */
+
+.page button,
+.login-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+} /* end button layout */
 
 .page button {
   width: fit-content;
   padding: 11px 19px;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, #0891b2, #6366f1);
+  background: var(--accent);
   color: #fff;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 22px rgba(8, 145, 178, 0.22);
+  box-shadow: 0 8px 22px rgba(8, 145, 178, 0.25);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
+} /* end button */
 
 .page button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.3);
-}
+  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.35);
+} /* end button:hover */
 
 .page button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-}
+} /* end button:disabled */
 
 .page button:focus-visible,
 .page summary:focus-visible {
-  outline: 3px solid #22d3ee;
+  outline: 3px solid var(--cyan);
   outline-offset: 3px;
-}
+} /* end focus */
 
 .page-nav button[aria-current="page"] {
   background: #fff;
   color: #172554;
-}
+  box-shadow: none;
+} /* end current page */
 
-.page > label {
-  color: #dbeafe;
-}
-
+/* ---------- Form fields ---------- */
 .page label {
   display: block;
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #334155;
-}
+  color: var(--muted);
+} /* end label */
+
+.page > label {
+  color: var(--text);
+} /* end top-level label */
 
 .page .checkbox-label {
   display: flex;
@@ -137,100 +161,204 @@ body:has(.page) {
   text-transform: none;
   letter-spacing: 0;
   cursor: pointer;
-}
+} /* end .checkbox-label */
 
 .page select,
 .page textarea,
-.page input:not([type="checkbox"]) {
+.page input:not([type="checkbox"]):not([type="radio"]) {
   width: 100%;
   padding: 12px 14px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
   border-radius: 11px;
-  background: #fff;
-  color: #0f172a;
+  background: var(--field);
+  color: var(--text);
   font: inherit;
-}
+} /* end fields */
 
 .page > select {
   margin: 8px 0 24px;
-}
+} /* end top-level select */
 
 .page textarea {
   resize: vertical;
-}
+} /* end textarea */
 
 .page select:focus,
 .page textarea:focus,
 .page input:focus {
   outline: none;
-  border-color: #0891b2;
-  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.17);
-}
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.18);
+} /* end field focus */
 
+/* ---------- Cards ---------- */
 .page form,
 .page .job {
   display: grid;
   gap: 13px;
   margin: 20px 0;
   padding: clamp(18px, 3vw, 26px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.15);
-}
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+} /* end form and job cards */
 
 .page .job {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
+  transition: transform 0.2s ease, background 0.2s ease;
+} /* end .job transition */
 
 .page .job:hover {
   transform: translateY(-2px);
-  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.2);
-}
+  background: var(--card-hover);
+} /* end .job:hover */
 
-.page form p,
+.page .job h3,
+.page .job a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+} /* end job heading and links */
+
 .page .job p {
-  color: #475569;
-}
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+} /* end job paragraphs */
+
+.page .job svg {
+  flex-shrink: 0;
+  vertical-align: middle;
+} /* end job icons */
 
 .page details {
-  color: #334155;
-}
+  color: var(--muted);
+} /* end details */
 
 .page summary {
   width: fit-content;
-  color: #0369a1;
+  color: var(--cyan);
   font-weight: 700;
   cursor: pointer;
-}
+} /* end summary */
 
+/* ---------- Messages and badges ---------- */
 .page .error {
   padding: 12px 14px;
-  border: 1px solid #fda4af;
-  border-left: 4px solid #e11d48;
+  border: 1px solid rgba(251, 113, 133, 0.4);
+  border-left: 4px solid var(--danger);
   border-radius: 10px;
-  background: #fff1f2;
-  color: #9f1239;
-}
+  background: rgba(251, 113, 133, 0.1);
+  color: #fecdd3;
+} /* end .error */
 
 .page [role="status"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   padding: 12px 14px;
-  border: 1px solid #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.4);
   border-radius: 10px;
-  background: #fffbeb;
-  color: #92400e;
-}
+  background: rgba(251, 191, 36, 0.1);
+  color: #fde68a;
+} /* end status */
 
 .page .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   width: fit-content;
   padding: 5px 12px;
+  border: 1px solid rgba(52, 211, 153, 0.4);
   border-radius: 999px;
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--success);
   font-size: 0.8rem;
   font-weight: 700;
-}
+} /* end .badge */
 
+/* ---------- Application status cards ---------- */
+.page .job fieldset {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 4px 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.15);
+} /* end fieldset */
+
+.page .job fieldset legend {
+  padding: 0 8px;
+  color: #fff;
+  font-weight: 800;
+} /* end legend */
+
+.page .job fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+} /* end fieldset label */
+
+.page .job fieldset label:has(input:checked) {
+  border-color: var(--cyan);
+  background: rgba(34, 211, 238, 0.12);
+  color: #a5f3fc;
+} /* end checked option */
+
+.page .job fieldset label:has(input:focus-visible) {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
+} /* end focused option */
+
+.page .job fieldset input[type="radio"] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--cyan);
+  cursor: pointer;
+} /* end radio */
+
+.page .job .interview-confirmation {
+  padding: 14px 18px;
+  border: 2px solid var(--success);
+  border-radius: 14px;
+  background: rgba(52, 211, 153, 0.12);
+  color: #a7f3d0;
+  font-weight: 700;
+} /* end .interview-confirmation */
+
+.page .job .interview-confirmation strong {
+  color: #a7f3d0;
+} /* end confirmation strong */
+
+/* ---------- Login page bits that LoginPage.css does not cover ---------- */
+.login-eyebrow,
+.login-track-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+} /* end login icons */
+
+/* ---------- Responsive and motion ---------- */
 @media (max-width: 600px) {
   .page {
     width: min(100% - 24px, 1100px);
@@ -240,7 +368,12 @@ body:has(.page) {
   .page-nav button {
     flex: 1 1 auto;
   }
-}
+
+  .page .app-title svg {
+    width: 30px;
+    height: 30px;
+  }
+} /* end mobile */
 
 @media (prefers-reduced-motion: reduce) {
   .page *,
@@ -254,152 +387,4 @@ body:has(.page) {
   .page button:hover {
     transform: none;
   }
-}
-.page > p {
-  color: #f1f5f9;
-}
-
-.page > label {
-  color: #f1f5f9;
-}
-.page-nav button,
-.login-card button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-}
-
-.login-eyebrow,
-.login-track-list span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.page h3,
-.page .job p,
-.page .job a {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.page .job h3,
-.page .job a,
-.page #job-results h2 {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.page .job svg {
-  flex-shrink: 0;
-  vertical-align: middle;
-}
-.page .app-title {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.page .app-title svg {
-  flex-shrink: 0;
-  color: #22d3ee;
-}
-
-@media (max-width: 600px) {
-  .page .app-title svg {
-    width: 30px;
-    height: 30px;
-  }
-}
-.page .group-title {
-  display: block;
-  margin: 28px 0 8px;
-  color: #fff;
-}
-
-.page > section > label,
-.page > section > section > label {
-  color: #dbeafe;
-}
-
-.page > section > p a,
-.page > section > section > p a {
-  color: #7dd3fc;
-}
-
-.page > section > p a:hover,
-.page > section > section > p a:hover {
-  color: #fff;
-}
-/* Application status cards */
-.page .job fieldset {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
-  margin: 4px 0;
-  padding: 16px;
-  border: 1px solid #cbd5e1;
-  border-radius: 16px;
-  background: #f8fafc;
-}
-
-.page .job fieldset legend {
-  padding: 0 8px;
-  color: #172554;
-  font-weight: 800;
-}
-
-.page .job fieldset label {
-  display: flex !important;
-  align-items: center;
-  gap: 9px;
-  min-height: 52px;
-  padding: 10px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  background: #fff;
-  color: #334155;
-  font-size: 0.75rem;
-  line-height: 1.3;
-  text-transform: none;
-  letter-spacing: 0;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.page .job fieldset label:has(input:checked) {
-  border-color: #0891b2;
-  background: #ecfeff;
-  color: #155e75;
-}
-
-.page .job fieldset label:has(input:focus-visible) {
-  outline: 3px solid #22d3ee;
-  outline-offset: 2px;
-}
-
-.page .job fieldset input[type="radio"] {
-  flex: 0 0 18px;
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  box-shadow: none;
-  accent-color: #0891b2;
-  cursor: pointer;
-}
-.page .job .interview-confirmation {
-  padding: 14px 18px;
-  border: 2px solid #22c55e;
-  border-radius: 14px;
-  background: #ecfdf5;
-  color: #14532d;
-  font-weight: 700;
-}
-
-.page .job .interview-confirmation strong {
-  color: #14532d;
-}
+} /* end reduced motion */

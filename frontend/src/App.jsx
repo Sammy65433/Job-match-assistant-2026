@@ -617,7 +617,6 @@ export default function App() {
                     <label htmlFor={`interview-${job._id}`}>
                       Interview date and time
                     </label>
-
                     <div className="interview-picker">
                       <input
                         id={`interview-${job._id}`}
@@ -627,21 +626,9 @@ export default function App() {
                             ? new Date(
                               new Date(job.interviewAt).getTime() -
                               new Date(job.interviewAt).getTimezoneOffset() * 60000
-                            )
-                              .toISOString()
-                              .slice(0, 16)
+                            ).toISOString().slice(0, 16)
                             : ""
                         }
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          if (value) {
-                            void updateStatus(
-                              job._id,
-                              "interview",
-                              new Date(value).toISOString()
-                            );
-                          }
-                        }}
                       />
                       <button
                         type="button"
@@ -651,20 +638,43 @@ export default function App() {
                       >
                         Choose date and time
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const value = document.getElementById(`interview-${job._id}`)?.value;
+                          if (!value) {
+                            setWorkspaceError("Choose a complete interview date and time.");
+                            return;
+                          }
+                          void updateStatus(job._id, "interview", new Date(value).toISOString());
+                        }}
+                      >
+                        Save interview date
+                      </button>
+                      {job.interviewAt && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void updateStatus(job._id, "interview", null);
+                          }}
+                        >
+                          Remove interview date
+                        </button>
+                      )}
                     </div>
-
-                    {job.interviewAt && (
-                      <p className="interview-confirmation" role="status">
-                        🎉 Interview scheduled for{" "}
-                        <strong>
-                          {new Date(job.interviewAt).toLocaleString([], {
-                            dateStyle: "full",
-                            timeStyle: "short"
-                          })}
-                        </strong>
-                      </p>
-                    )}
                   </>
+                )}
+
+                {job.interviewAt && (
+                  <p className="interview-confirmation" role="status">
+                    🎉 Interview scheduled for{" "}
+                    <strong>
+                      {new Date(job.interviewAt).toLocaleString([], {
+                        dateStyle: "full",
+                        timeStyle: "short"
+                      })}
+                    </strong>
+                  </p>
                 )}
 
                 {job.appliedAt && (
