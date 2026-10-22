@@ -6,6 +6,7 @@ import { getMuseJobs } from "./muse.js";
 import { getAllBoardJobs } from "./boards.js";
 import { COMPANY_BOARDS } from "../data/companyBoards.js";
 import { runLoaders, statsKey } from "./loaders.js";
+import { getJoobleJobs } from "./jooble.js";
 
 const HOUR = 60 * 60 * 1000;
 
@@ -126,6 +127,22 @@ export async function discoverRemoteJobs(track) {
         cached(`muse-${track}-remote`, 3 * HOUR, () =>
           getMuseJobs({ track, location: "Flexible / Remote" })
         )
+        
+    },
+        {
+      name: "Jooble",
+      run: () =>
+        cached(`jooble-${track}-remote`, 3 * HOUR, async () => {
+          const list = await getJoobleJobs({
+            track,
+            location: "United States",
+            remote: true
+          });
+
+          return list.filter((job) =>
+            /remote/i.test(`${job.location} ${job.title} ${job.description}`)
+          );
+        })
     },
     { name: "Company boards", run: () => loadRemoteBoards() }
   ]; // end loaders

@@ -3,13 +3,16 @@ import { getMuseJobs } from "./muse.js";
 import { getAllBoardJobs } from "./boards.js";
 import { COMPANY_BOARDS } from "../data/companyBoards.js";
 import { searchAdzunaJobs } from "./adzuna.js";
+import { getJoobleJobs } from "./jooble.js";
 import { runLoaders, statsKey } from "./loaders.js";
 import { titleMatchesTrack, SENIOR_TITLE, ENTRY_TITLE } from "./discover.js";
+import { detectWorkMode } from "./workMode.js";
 
 const HOUR = 60 * 60 * 1000;
 
 const AREAS = {
   los_angeles: {
+    joobleLocation: "Los Angeles, CA",
     museLocations: ["Los Angeles, CA"],
     keywords: [
       "los angeles", "santa monica", "culver city", "burbank",
@@ -17,6 +20,7 @@ const AREAS = {
     ]
   },
   newark: {
+    joobleLocation: "Newark, NJ",
     museLocations: ["Newark, NJ", "New York, NY"],
     keywords: [
       "newark", "new york", "nyc", "brooklyn", "manhattan",
@@ -44,6 +48,7 @@ function classifyJob(job, track) {
   return {
     ...job,
     title,
+    workMode: detectWorkMode(job),
     levelGroup:
       job.entryLevelListed || ENTRY_TITLE.test(title)
         ? "explicit-entry-level"
@@ -51,7 +56,7 @@ function classifyJob(job, track) {
   };
 } // end classifyJob
 
-export async function discoverInPersonJobs(track, area) {
+export async function discoverHybridJobs(track, area) {
   if ((track !== "software" && track !== "data") || !AREAS[area]) {
     throw new Error("Choose software or data, and a valid area.");
   } // end if invalid
@@ -59,13 +64,24 @@ export async function discoverInPersonJobs(track, area) {
   const loaders = [
     {
       name: "Adzuna",
-      run: () => searchAdzunaJobs(ADZUNA_QUERY[track], area)
+      run: () => searchAdzunaJobs(`${ADZUNA_QUERY[track]} hybrid`, area)
     },
     {
       name: "The Muse",
       run: () =>
         cached(`muse-${track}-${area}`, 3 * HOUR, () =>
           getMuseJobs({ track, location: AREAS[area].museLocations })
+        )
+    },
+    {
+      name: "Jooble",
+      run: () =>
+        cached(`jooble-${track}-${area}-hybrid`, 3 * HOUR, () =>
+          getJoobleJobs({
+            track,
+            location: AREAS[area].joobleLocation,
+            hybrid: true
+          })
         )
     },
     {
@@ -93,6 +109,7 @@ export async function discoverInPersonJobs(track, area) {
     ) // end filter url
     .map((job) => classifyJob(job, track))
     .filter(Boolean)
+    .filter((job) => job.workMode === "hybrid")
     .filter((job) => {
       const key = `${job.title}|${job.company || ""}`.trim().toLowerCase();
 
@@ -112,4 +129,4 @@ export async function discoverInPersonJobs(track, area) {
   }); // end forEach kept
 
   return { jobs: filteredJobs, errors, stats };
-} // end discoverInPersonJobs
+} // end discoverHybridJobs

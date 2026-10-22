@@ -11,20 +11,20 @@ import {
 import "./App.css";
 import { TRACKS, parseSkills } from "./tracks.js";
 import JobSearchForm from "./JobSearchForm.jsx";
-import RemoteJobs from "./RemoteJobs.jsx";
-import AudioJobs from "./AudioJobs.jsx";
 import ResumeComparison from "./ResumeComparison.jsx";
 import ResumeJobCheck from "./ResumeJobCheck.jsx";
 import LoginPage from "./LoginPage.jsx";
 import { apiRequest } from "./api.js";
 import { descriptionText } from "./descriptionText.js";
+import JobResults from "./JobResults.jsx";
 
 const STATUS_LABELS = {
   saved: "Saved",
   ready: "Ready to apply",
   applied: "Applied (marked by me)",
   interview: "Interview",
-  rejected: "Closed / rejected"
+  closed: "Closed",
+  rejected: "Rejected"
 };
 
 const TABS = [
@@ -60,8 +60,8 @@ export default function App() {
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteError, setRemoteError] = useState("");
   const [remoteSearched, setRemoteSearched] = useState(false);
-  const [audioSearchRequested, setAudioSearchRequested] = useState(false);
-
+  const [mode, setMode] = useState("remote");
+  const [area, setArea] = useState("newark");
   const [customMatch, setCustomMatch] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,11 +71,11 @@ export default function App() {
   const [company, setCompany] = useState("");
   const [description, setDescription] = useState("");
   const [requiredSkillText, setRequiredSkillText] = useState("");
-    const [sessionNotice, setSessionNotice] = useState("");
+  const [sessionNotice, setSessionNotice] = useState("");
 
   const skillText = skillsByTrack[track];
 
-    async function request(path, options = {}) {
+  async function request(path, options = {}) {
     const isPrivate =
       path.startsWith("/api/saved-jobs") ||
       path.startsWith("/api/resume/") ||
@@ -128,10 +128,11 @@ export default function App() {
           );
         }
       } catch (error) {
-        if (!cancelled) {
-          setSavedJobs([]);
+        if (error.status === 401) {
+          changeAuth(null, "Your session expired. Please sign in again.");
+        } else {
           setWorkspaceError(error.message);
-        }
+        } // end if expired
       } finally {
         if (!cancelled) setSavedJobsLoading(false);
       }
@@ -144,64 +145,86 @@ export default function App() {
     };
   }, [page, track, auth?.token]);
 
-  function changeAuth(nextAuth) {
-  setAuth(nextAuth);
-  setSavedJobs([]);
-  setWorkspaceError("");
-  setFormError("");
-  setResumeTextByTrack({ software: "", data: "", audio: "" });
-  setPage("jobs");
-}
-  function changeTrack(nextTrack) {
-    setTrack(nextTrack);
+  function changeAuth(nextAuth, notice = "") {
+    setAuth(nextAuth);
+    setSessionNotice(notice);
     setSavedJobs([]);
     setWorkspaceError("");
+    setFormError("");
+    setResumeTextByTrack({ software: "", data: "", audio: "" });
+    setSkillsByTrack({
+      software: TRACKS.software.defaultSkills,
+      data: TRACKS.data.defaultSkills,
+      audio: TRACKS.audio.defaultSkills
+    });
+    setCustomMatch(null);
+    setTitle("");
+    setCompany("");
+    setDescription("");
+    setRequiredSkillText("");
+    setPage("jobs");
+  } // end changeAuth
+
+  function clearResults() {
     setRemoteJobs([]);
     setRemoteWarnings([]);
     setRemoteError("");
     setRemoteSearched(false);
-    setAudioSearchRequested(false);
-    setCustomMatch(null);
-    setFormError("");
-  }
+  } // end clearResults
+
+  function changeTrack(nextTrack) {
+    setTrack(nextTrack);
+    setMode(TRACKS[nextTrack].modes[0]);
+    clearResults();
+  } // end changeTrack
+
+  function changeMode(nextMode) {
+    setMode(nextMode);
+    clearResults();
+  } // end changeMode
+
+  function changeArea(nextArea) {
+    setArea(nextArea);
+    clearResults();
+  } // end changeArea
+
+  function jobsUrl() {
+    const skills = encodeURIComponent(skillText);
+    const where = `area=${encodeURIComponent(area)}`;
+    const which = `track=${encodeURIComponent(track)}`;
+
+    if (track === "audio") {
+      return `/api/discover/audio?${where}&mode=${encodeURIComponent(mode)}&skills=${skills}`;
+    } // end if audio
+
+    if (mode === "hybrid") {
+      return `/api/discover/hybrid?${which}&${where}&skills=${skills}`;
+    } // end if hybrid
+
+    return `/api/discover/remote?${which}&skills=${skills}`;
+  } // end jobsUrl
 
   async function loadRemoteJobs() {
-    if (track === "audio") return;
-
     setRemoteLoading(true);
-    setRemoteError("");
-    setRemoteJobs([]);
-    setRemoteWarnings([]);
-    setRemoteSearched(false);
+    clearResults();
 
     try {
-      const data = await request(
-        `/api/discover/remote?track=${encodeURIComponent(track)}`
-      );
+      const data = await request(jobsUrl());
       setRemoteJobs(Array.isArray(data.jobs) ? data.jobs : []);
-      setRemoteWarnings(
-        Array.isArray(data.errors) ? data.errors : []
-      );
+      setRemoteWarnings(Array.isArray(data.errors) ? data.errors : []);
     } catch (error) {
       setRemoteError(error.message);
     } finally {
       setRemoteLoading(false);
       setRemoteSearched(true);
     }
-  }
+  } // end loadRemoteJobs
 
   function findRealJobs(event) {
     event.preventDefault();
-
-    if (track === "audio") {
-      setAudioSearchRequested(true);
-    } else {
-      void loadRemoteJobs();
-    }
-
+    void loadRemoteJobs();
     document.getElementById("job-results")?.scrollIntoView();
-  }
-
+  } // end findRealJobs
   async function previewCustomJob(event) {
     event.preventDefault();
 
@@ -272,36 +295,36 @@ export default function App() {
   }
 
   async function saveListing(job, listingTrack) {
-  if (!job.url || !job.source || !job.id) {
-    throw new Error("This listing is missing a source link.");
+    if (!job.url || !job.source || !job.id) {
+      throw new Error("This listing is missing a source link.");
+    }
+
+    const data = await post("/api/saved-jobs/from-listing", {
+
+      track: listingTrack,
+      title: String(job.title || "").trim().slice(0, 150),
+      company: String(job.company || "Company not listed")
+        .trim()
+        .slice(0, 150),
+      description: descriptionText(job.description || "").slice(0, 10000),
+      source: job.source,
+      sourceJobId: String(job.id).slice(0, 200),
+      url: job.url
+    });
+
+
+    if (listingTrack === track) {
+      setSavedJobs((current) =>
+        current.some((saved) => saved._id === data.savedJob._id)
+          ? current
+          : [data.savedJob, ...current]
+      );
+    }
+
+    return data.savedJob;
   }
 
-  const data = await post("/api/saved-jobs/from-listing", {
-    
-    track: listingTrack,
-    title: String(job.title || "").trim().slice(0, 150),
-    company: String(job.company || "Company not listed")
-      .trim()
-      .slice(0, 150),
-    description: descriptionText(job.description || "").slice(0, 10000),
-    source: job.source,
-    sourceJobId: String(job.id).slice(0, 200),
-    url: job.url
-  });
-  
-
-  if (listingTrack === track) {
-    setSavedJobs((current) =>
-      current.some((saved) => saved._id === data.savedJob._id)
-        ? current
-        : [data.savedJob, ...current]
-    );
-  }
-
-  return data.savedJob;
-}
-
-  async function updateStatus(jobId, status) {
+  async function updateStatus(jobId, status, interviewAt) {
     setWorkspaceError("");
 
     try {
@@ -310,23 +333,25 @@ export default function App() {
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status })
+          body: JSON.stringify({
+            status,
+            ...(interviewAt !== undefined ? { interviewAt } : {})
+          })
         }
       );
 
       setSavedJobs((current) =>
-        current.map((job) =>
-          job._id === jobId ? data.savedJob : job
-        )
+        current.map((job) => (job._id === jobId ? data.savedJob : job))
       );
     } catch (error) {
       setWorkspaceError(error.message);
     }
   }
 
+
   if (!auth) {
     return (
-            <LoginPage
+      <LoginPage
         request={(path, options) => apiRequest(path, options)}
         onAuthenticated={changeAuth}
         notice={sessionNotice}
@@ -382,6 +407,8 @@ export default function App() {
         <>
           <JobSearchForm
             track={track}
+            mode={mode}
+            area={area}
             skillText={skillText}
             loading={remoteLoading}
             onSkillChange={(text) =>
@@ -390,28 +417,22 @@ export default function App() {
                 [track]: text
               }))
             }
+            onModeChange={changeMode}
+            onAreaChange={changeArea}
             onSubmit={findRealJobs}
           />
 
           <section id="job-results" aria-label="Real job results">
-            {track === "audio" ? (
-              <>
-                {audioSearchRequested && (
-                  <p>Select an area and click Search audio jobs below.</p>
-                )}
-                <AudioJobs request={request} onSave={saveListing} />
-              </>
-            ) : (
-              <RemoteJobs
-                track={track}
-                jobs={remoteJobs}
-                warnings={remoteWarnings}
-                loading={remoteLoading}
-                error={remoteError}
-                searched={remoteSearched}
-                onSave={saveListing}
-              />
-            )}
+            <JobResults
+              track={track}
+              mode={mode}
+              jobs={remoteJobs}
+              warnings={remoteWarnings}
+              loading={remoteLoading}
+              error={remoteError}
+              searched={remoteSearched}
+              onSave={saveListing}
+            />
           </section>
         </>
       )}
@@ -423,12 +444,12 @@ export default function App() {
             Preview a pasted job
           </h2>
           <p>
-  Found a job outside this app? Enter its title, company, description,
-  and required skills below. The preview compares those required skills
-  with your editable career-track skill list. The percentage is a
-  screening estimate, not proof that you qualify. You can save the job
-  afterward.
-</p>
+            Found a job outside this app? Enter its title, company, description,
+            and required skills below. The preview compares those required skills
+            with your editable career-track skill list. The percentage is a
+            screening estimate, not proof that you qualify. You can save the job
+            afterward.
+          </p>
 
           <p>
             Enter required skills from the listing. This preview uses
@@ -575,25 +596,76 @@ export default function App() {
                     ? job.requiredSkills.join(", ")
                     : "Requirements not reviewed"}
                 </p>
+                <fieldset>
+                  <legend>Application status</legend>
+                  {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                    <label key={value} style={{ display: "block" }}>
+                      <input
+                        type="radio"
+                        name={`status-${job._id}`}
+                        value={value}
+                        checked={(job.status || "saved") === value}
+                        onChange={() => updateStatus(job._id, value)}
+                      />{" "}
+                      {label}
+                    </label>
+                  ))}
+                </fieldset>
 
-                <label htmlFor={`status-${job._id}`}>
-                  Application status
-                </label>
-                <select
-                  id={`status-${job._id}`}
-                  value={job.status || "saved"}
-                  onChange={(event) =>
-                    updateStatus(job._id, event.target.value)
-                  }
-                >
-                  {Object.entries(STATUS_LABELS).map(
-                    ([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    )
-                  )}
-                </select>
+                {job.status === "interview" && (
+                  <>
+                    <label htmlFor={`interview-${job._id}`}>
+                      Interview date and time
+                    </label>
+
+                    <div className="interview-picker">
+                      <input
+                        id={`interview-${job._id}`}
+                        type="datetime-local"
+                        defaultValue={
+                          job.interviewAt
+                            ? new Date(
+                              new Date(job.interviewAt).getTime() -
+                              new Date(job.interviewAt).getTimezoneOffset() * 60000
+                            )
+                              .toISOString()
+                              .slice(0, 16)
+                            : ""
+                        }
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          if (value) {
+                            void updateStatus(
+                              job._id,
+                              "interview",
+                              new Date(value).toISOString()
+                            );
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          document.getElementById(`interview-${job._id}`)?.showPicker()
+                        }
+                      >
+                        Choose date and time
+                      </button>
+                    </div>
+
+                    {job.interviewAt && (
+                      <p className="interview-confirmation" role="status">
+                        🎉 Interview scheduled for{" "}
+                        <strong>
+                          {new Date(job.interviewAt).toLocaleString([], {
+                            dateStyle: "full",
+                            timeStyle: "short"
+                          })}
+                        </strong>
+                      </p>
+                    )}
+                  </>
+                )}
 
                 {job.appliedAt && (
                   <p>

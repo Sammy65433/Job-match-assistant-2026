@@ -32,11 +32,13 @@ const savedJobSchema = new mongoose.Schema(
       maxlength: 200
     },
     status: {
-      type: String,
-      enum: ["saved", "ready", "applied", "interview", "rejected"],
-      default: "saved"
-    },
-    appliedAt: { type: Date, default: null }
+  type: String,
+  enum: ["saved", "ready", "applied", "interview", "closed", "rejected"],
+  default: "saved"
+},
+appliedAt: { type: Date, default: null },
+interviewAt: { type: Date, default: null }
+
   },
   { timestamps: true }
 );

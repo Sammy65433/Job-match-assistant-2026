@@ -1,5 +1,11 @@
 const store = new Map(); // remembers answers by name
 
+function isEmpty(value) {
+  if (Array.isArray(value)) return value.length === 0;
+  if (value && Array.isArray(value.jobs)) return value.jobs.length === 0;
+  return false;
+} // end isEmpty
+
 export async function cached(key, maxAgeMs, loader) {
   const hit = store.get(key);
 
@@ -8,6 +14,10 @@ export async function cached(key, maxAgeMs, loader) {
   } // end if fresh
 
   const value = await loader();
-  store.set(key, { time: Date.now(), value });
+
+  if (!isEmpty(value)) {
+    store.set(key, { time: Date.now(), value });
+  } // end if worth remembering
+
   return value;
 } // end cached

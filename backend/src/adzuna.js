@@ -1,3 +1,5 @@
+import { detectWorkMode } from "./workMode.js";
+
 const BASE_URL = "https://api.adzuna.com/v1/api/jobs/us/search/1";
 
 const SEARCHES = {
@@ -66,11 +68,17 @@ function validRedirectUrl(value) {
   }
 }
 
-export async function searchAdzunaAudioJobs(area) {
+const AUDIO_MODES = ["in-person", "hybrid", "remote"];
+
+export async function searchAdzunaAudioJobs(area, mode = "in-person") {
   const search = SEARCHES[area];
 
   if (!search) {
     throw new Error("Invalid audio search area.");
+  }
+
+  if (!AUDIO_MODES.includes(mode)) {
+    throw new Error("Invalid audio work type.");
   }
 
   const appId = process.env.ADZUNA_APP_ID;
@@ -80,19 +88,27 @@ export async function searchAdzunaAudioJobs(area) {
     throw new Error("Adzuna credentials are not configured.");
   }
 
-  const cached = cache.get(area);
+  const cacheKey = `${area}|${mode}`;
+  const hit = cache.get(cacheKey);
 
-  if (cached && Date.now() - cached.time < CACHE_MS) {
-    return cached.jobs;
+  if (hit && Date.now() - hit.time < CACHE_MS) {
+    return hit.jobs;
   }
 
   const url = new URL(BASE_URL);
   url.searchParams.set("app_id", appId);
   url.searchParams.set("app_key", appKey);
-  url.searchParams.set("what", "audio engineer");
-  url.searchParams.set("where", search.where);
-  url.searchParams.set("distance", "40");
-  url.searchParams.set("results_per_page", "20");
+  url.searchParams.set(
+    "what",
+    mode === "in-person" ? "audio engineer" : `audio engineer ${mode}`
+  );
+
+  if (mode !== "remote") {
+    url.searchParams.set("where", search.where);
+    url.searchParams.set("distance", "40");
+  }
+
+  url.searchParams.set("results_per_page", "30");
   url.searchParams.set("sort_by", "date");
 
   const response = await fetch(url, {
@@ -128,12 +144,14 @@ export async function searchAdzunaAudioJobs(area) {
       source: "Adzuna",
       ...classifyAudioJob(job)
     }))
+    .map((job) => ({ ...job, workMode: detectWorkMode(job) }))
+    .filter((job) => job.workMode === mode)
     .sort(
       (a, b) =>
         relevanceOrder[a.relevance] - relevanceOrder[b.relevance]
     );
 
-  cache.set(area, { time: Date.now(), jobs });
+  cache.set(cacheKey, { time: Date.now(), jobs });
   return jobs;
 }
 export async function searchAdzunaJobs(what, area) {

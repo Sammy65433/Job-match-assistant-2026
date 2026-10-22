@@ -1,10 +1,14 @@
-import { TRACKS } from "./tracks.js";
+import { AREAS, MODES, TRACKS } from "./tracks.js";
 
 export default function JobSearchForm({
   track,
+  mode,
+  area,
   skillText,
   loading,
   onSkillChange,
+  onModeChange,
+  onAreaChange,
   onSubmit
 }) {
   return (
@@ -18,13 +22,44 @@ export default function JobSearchForm({
         value={skillText}
         onChange={(event) => onSkillChange(event.target.value)}
       />
+
+      <label htmlFor="work-mode">Work type</label>
+      <select
+        id="work-mode"
+        value={mode}
+        onChange={(event) => onModeChange(event.target.value)}
+      >
+        {TRACKS[track].modes.map((value) => (
+          <option key={value} value={value}>
+            {MODES[value]}
+          </option>
+        ))}
+      </select>
+
+      {mode !== "remote" && (
+        <>
+          <label htmlFor="search-area">Search area</label>
+          <select
+            id="search-area"
+            value={area}
+            onChange={(event) => onAreaChange(event.target.value)}
+          >
+            {Object.entries(AREAS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
+
       <p>
-        These skills are used for saved-job comparisons, not to filter
-        discovered listings yet. Salary filtering is not available for
-        the current real-job sources.
+        Your skills are used to estimate a match percentage on each
+        listing and to compare saved jobs. They do not filter results.
+        Salary filtering is not available for the current sources.
       </p>
-      <button type="submit" disabled={track !== "audio" && loading}>
-        {track !== "audio" && loading ? "Searching..." : "Find real jobs"}
+      <button type="submit" disabled={loading}>
+        {loading ? "Searching..." : "Find real jobs"}
       </button>
     </form>
   );

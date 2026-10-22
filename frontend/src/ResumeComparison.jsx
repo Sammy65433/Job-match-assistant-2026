@@ -34,6 +34,68 @@ export default function ResumeComparison({
     (line) => line.length > MAX_REQUIREMENT_LENGTH,
   );
 
+  async function importResume(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  setError("");
+  setResults(null);
+
+  try {
+    if (file.size > 5_000_000) {
+      throw new Error("Choose a file under 5 MB.");
+    }
+
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    let text = "";
+
+    if (extension === "txt") {
+      text = await file.text();
+    } else if (extension === "docx") {
+      const mammoth = await import("mammoth/mammoth.browser");
+      const result = await mammoth.extractRawText({
+        arrayBuffer: await file.arrayBuffer()
+      });
+      text = result.value;
+    } else if (extension === "pdf") {
+      const pdfjs = await import("pdfjs-dist");
+      const worker = await import(
+        "pdfjs-dist/build/pdf.worker.min.mjs?url"
+      );
+      pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+
+      const pdf = await pdfjs.getDocument({
+        data: new Uint8Array(await file.arrayBuffer())
+      }).promise;
+
+      const pages = [];
+      for (let number = 1; number <= pdf.numPages; number++) {
+        const page = await pdf.getPage(number);
+        const content = await page.getTextContent();
+        pages.push(content.items.map((item) => item.str || "").join(" "));
+      }
+      text = pages.join("\n");
+    } else {
+      throw new Error("Choose a .txt, .docx, or .pdf resume.");
+    }
+
+    text = text.trim();
+    if (!text) {
+      throw new Error("No selectable text found. Scanned PDFs need OCR.");
+    }
+    if (text.length > MAX_RESUME_LENGTH) {
+      throw new Error(`Resume exceeds ${MAX_RESUME_LENGTH} characters.`);
+    }
+
+    onResumeTextChange(text);
+  } catch (err) {
+    setError(err.message || "Could not read the resume.");
+  } finally {
+    event.target.value = "";
+  }
+}
+
+
   function fillStarterText() {
     onResumeTextChange(STARTER_TEXT[trackId] || "");
     setResults(null);
@@ -102,6 +164,13 @@ export default function ResumeComparison({
       <button type="button" onClick={fillStarterText}>
         Use {trackLabel} starter text
       </button>
+<label htmlFor="resume-file">Import resume</label>
+<input
+  id="resume-file"
+  type="file"
+  accept=".txt,.docx,.pdf"
+  onChange={importResume}
+/>
 
       <form onSubmit={compare}>
         <label htmlFor="resume-text">Resume evidence text</label>

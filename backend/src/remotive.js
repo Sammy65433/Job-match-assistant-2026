@@ -80,10 +80,12 @@ const SOFTWARE_TITLE =
 const DATA_TITLE =
   /\b(data analyst|business analyst|business intelligence|bi analyst|reporting analyst|analytics analyst|etl analyst)\b/i;
 
-export function selectRemotiveJobs(jobs, track, limit = 20) {
+const SOFTWARE_CATEGORY = /software/i;
+
+export function selectRemotiveJobs(jobs, track, limit = 100) {
   if (track !== "software" && track !== "data") {
     return [];
-  }
+  } // end if invalid track
 
   return jobs
     .filter((job) => {
@@ -91,15 +93,12 @@ export function selectRemotiveJobs(jobs, track, limit = 20) {
 
       if (track === "software") {
         return (
-          job.category === "Software Development" &&
+          SOFTWARE_CATEGORY.test(job.category) &&
           SOFTWARE_TITLE.test(job.title)
         );
-      }
+      } // end if software
 
-      return (
-        job.category === "Data and Analytics" &&
-        DATA_TITLE.test(job.title)
-      );
-    })
+      return DATA_TITLE.test(job.title);
+    }) // end filter
     .slice(0, limit);
-}
+} // end selectRemotiveJobs

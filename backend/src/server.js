@@ -14,22 +14,26 @@ import { signUp, signIn, currentUser } from "./auth.js";
 import { requireJobUser } from "./middleware/requireJobUser.js";
 import { signInWithGoogle } from "./googleAuth.js";
 import rateLimit from "express-rate-limit";
-import { discoverInPersonJobs } from "./inPerson.js";
+import { discoverHybridJobs } from "./hybrid.js";
+import { withScores } from "./listingScore.js";
 
 const app = express();
+if (process.env.TRUST_PROXY === "1") {
+  app.set("trust proxy", 1);
+} // end if behind one proxy
 const port = Number(process.env.PORT) || 5003;
 const tracks = ["software", "data", "audio"];
-const statuses = ["saved", "ready", "applied", "interview", "rejected"];
+const statuses = ["saved", "ready", "applied", "interview", "closed", "rejected"];
 const sources = [
   "Remotive",
   "Jobicy",
   "Himalayas",
   "Adzuna",
   "The Muse",
+  "Jooble",
   "Greenhouse",
   "Lever"
 ];
-
 
 
 const allowedOrigins = [
@@ -78,6 +82,15 @@ function validSkills(skills) {
 function validTrack(track) {
   return tracks.includes(track);
 }
+function parseSkillsQuery(value) {
+  if (typeof value !== "string" || value.length > 3000) return [];
+
+  return value
+    .split(",")
+    .map((skill) => skill.trim())
+    .filter((skill) => skill && skill.length <= 100)
+    .slice(0, 100);
+} // end parseSkillsQuery
 
 function validListingUrl(value) {
   if (
@@ -306,55 +319,73 @@ app.post("/api/saved-jobs", requireJobUser, async (req, res) => {
   }
 });
 
-app.patch(
-  "/api/saved-jobs/:id/status",
-  requireJobUser,
-  async (req, res) => {
-    const { status } = req.body ?? {};
+app.patch("/api/saved-jobs/:id/status", requireJobUser, async (req, res) => {
+  const { status, interviewAt } = req.body ?? {};
+  const hasInterviewAt = Object.prototype.hasOwnProperty.call(
+    req.body ?? {},
+    "interviewAt"
+  );
 
-    if (!statuses.includes(status)) {
-      return res.status(400).json({ error: "Invalid status." });
-    }
-
-    if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ error: "Invalid job id." });
-    }
-
-    try {
-      const currentJob = await SavedJob.findOne({
-        _id: req.params.id,
-        ownerId: req.jobUser.id
-      });
-
-      if (!currentJob) {
-        return res.status(404).json({
-          error: "Saved job not found."
-        });
-      }
-
-      const update = { status };
-
-      if (status === "applied" && !currentJob.appliedAt) {
-        update.appliedAt = new Date();
-      } else if (status === "saved" || status === "ready") {
-        update.appliedAt = null;
-      }
-
-      const savedJob = await SavedJob.findOneAndUpdate(
-        { _id: req.params.id, ownerId: req.jobUser.id },
-        { $set: update },
-        { returnDocument: "after", runValidators: true }
-      ).lean();
-
-      return res.json({ savedJob });
-    } catch (error) {
-      console.error("Could not update saved job:", error);
-      return res.status(500).json({
-        error: "Could not update saved job."
-      });
-    }
+  if (!statuses.includes(status)) {
+    return res.status(400).json({ error: "Invalid status." });
   }
-);
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(400).json({ error: "Invalid job id." });
+  }
+
+  let parsedInterviewAt;
+  if (hasInterviewAt) {
+    if (status !== "interview") {
+      return res.status(400).json({
+        error: "Interview date requires interview status."
+      });
+    }
+    if (
+      interviewAt !== null &&
+      (typeof interviewAt !== "string" ||
+        !Number.isFinite(Date.parse(interviewAt)))
+    ) {
+      return res.status(400).json({ error: "Invalid interview date." });
+    }
+    parsedInterviewAt =
+      interviewAt === null ? null : new Date(interviewAt);
+  }
+
+  try {
+    const currentJob = await SavedJob.findOne({
+      _id: req.params.id,
+      ownerId: req.jobUser.id
+    });
+    if (!currentJob) {
+      return res.status(404).json({ error: "Saved job not found." });
+    }
+
+    const update = { status };
+
+    if (status === "applied" && !currentJob.appliedAt) {
+      update.appliedAt = new Date();
+    } else if (status === "saved" || status === "ready") {
+      update.appliedAt = null;
+    }
+
+    if (status !== "interview") {
+      update.interviewAt = null;
+    } else if (hasInterviewAt) {
+      update.interviewAt = parsedInterviewAt;
+    }
+
+    const savedJob = await SavedJob.findOneAndUpdate(
+      { _id: req.params.id, ownerId: req.jobUser.id },
+      { $set: update },
+      { returnDocument: "after", runValidators: true }
+    ).lean();
+
+    return res.json({ savedJob });
+  } catch (error) {
+    console.error("Could not update saved job:", error);
+    return res.status(500).json({ error: "Could not update saved job." });
+  }
+});
 
 app.get("/api/discover/remote", async (req, res) => {
   if (!["software", "data"].includes(req.query.track)) {
@@ -368,11 +399,12 @@ app.get("/api/discover/remote", async (req, res) => {
       await discoverRemoteJobs(req.query.track);
 
     return res.json({
-      track: req.query.track,
-      jobs: found,
-      errors,
-      stats
-    });
+  track: req.query.track,
+  jobs: withScores(found, req.query.track, parseSkillsQuery(req.query.skills)),
+  errors,
+  stats
+});
+
   } catch (error) {
     console.error("Could not discover remote jobs:", error);
     return res.status(502).json({
@@ -380,7 +412,7 @@ app.get("/api/discover/remote", async (req, res) => {
     });
   }
 });
-app.get("/api/discover/in-person", async (req, res) => {
+app.get("/api/discover/hybrid", async (req, res) => {
   const { track, area } = req.query;
 
   if (!["software", "data"].includes(track)) {
@@ -392,36 +424,46 @@ app.get("/api/discover/in-person", async (req, res) => {
   } // end if invalid area
 
   try {
-    const { jobs: found, errors, stats } = await discoverInPersonJobs(track, area);
-    return res.json({ track, area, jobs: found, errors, stats });
+    const { jobs: found, errors, stats } = await discoverHybridJobs(track, area);
+
+    return res.json({
+      track,
+      area,
+      jobs: withScores(found, track, parseSkillsQuery(req.query.skills)),
+      errors,
+      stats
+    });
   } catch (error) {
-    console.error("Could not discover in-person jobs:", error.message);
+    console.error("Could not discover hybrid jobs:", error.message);
     return res.status(502).json({ error: "Could not fetch job listings." });
   } // end try/catch
 }); // end route
 
+
 app.get("/api/discover/audio", async (req, res) => {
-  if (!["los_angeles", "newark"].includes(req.query.area)) {
-    return res.status(400).json({
-      error: "Choose los_angeles or newark."
-    });
+  const { area, mode = "in-person" } = req.query;
+
+  if (!["los_angeles", "newark"].includes(area)) {
+    return res.status(400).json({ error: "Choose los_angeles or newark." });
+  }
+
+  if (!["in-person", "hybrid", "remote"].includes(mode)) {
+    return res.status(400).json({ error: "Choose in-person, hybrid, or remote." });
   }
 
   try {
-    const found = await searchAdzunaAudioJobs(req.query.area);
+    const found = await searchAdzunaAudioJobs(area, mode);
 
     return res.json({
       source: "Adzuna",
-      area: req.query.area,
-      attribution:
-        "Open each listing using its Adzuna redirect link.",
-      jobs: found
+      area,
+      mode,
+      attribution: "Open each listing using its Adzuna redirect link.",
+      jobs: withScores(found, "audio", parseSkillsQuery(req.query.skills))
     });
   } catch (error) {
     console.error("Audio discovery failed:", error.message);
-    return res.status(502).json({
-      error: "Could not fetch audio jobs."
-    });
+    return res.status(502).json({ error: "Could not fetch audio jobs." });
   }
 });
 
@@ -476,12 +518,11 @@ async function start() {
 
   await mongoose.connect(process.env.MONGODB_URI);
 
-  const host = process.env.HOST || "127.0.0.1";
+    const host = process.env.HOST || "127.0.0.1";
 
-  app.listen(port, "0.0.0.0", () => {
-  console.log(`Job Match API listening on port ${port}`);
-});
- // end listen
+  app.listen(port, host, () => {
+    console.log(`Job Match API listening on ${host}:${port}`);
+  }); // end listen
 } // end start
 
 
