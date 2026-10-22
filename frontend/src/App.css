@@ -388,3 +388,17 @@
     transform: none;
   }
 } /* end reduced motion */
+
+.page .job-applied {
+  border: 2px solid #eab308;
+  background: #fffbeb;
+}
+
+.page .job .applied-badge {
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fef08a;
+  color: #713f12;
+  font-weight: 800;
+}

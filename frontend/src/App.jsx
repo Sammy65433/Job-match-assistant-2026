@@ -72,6 +72,48 @@ export default function App() {
   const [description, setDescription] = useState("");
   const [requiredSkillText, setRequiredSkillText] = useState("");
   const [sessionNotice, setSessionNotice] = useState("");
+  const [appliedListingIds, setAppliedListingIds] = useState(new Set());
+
+  useEffect(() => {
+    if (page !== "jobs" || !auth?.token) {
+      setAppliedListingIds(new Set());
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadAppliedListings() {
+      try {
+        const data = await apiRequest(
+          `/api/saved-jobs?track=${encodeURIComponent(track)}`,
+          {},
+          auth.token
+        );
+
+        if (!cancelled) {
+          setAppliedListingIds(
+            new Set(
+              (data.savedJobs || [])
+                .filter((job) => job.status === "applied" && job.sourceJobId)
+                .map((job) => `${job.source}:${job.sourceJobId}`)
+            )
+          );
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setAppliedListingIds(new Set());
+          console.error("Could not load applied listing markers:", error);
+        }
+      }
+    }
+
+    void loadAppliedListings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page, track, auth?.token]);
+
 
   const skillText = skillsByTrack[track];
 
@@ -432,7 +474,9 @@ export default function App() {
               error={remoteError}
               searched={remoteSearched}
               onSave={saveListing}
+              appliedListingIds={appliedListingIds}
             />
+
           </section>
         </>
       )}

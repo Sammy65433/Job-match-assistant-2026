@@ -70,9 +70,15 @@ function MatchLine({ job }) {
   );
 } // end MatchLine
 
-function JobCard({ job, track, onSave }) {
+function JobCard({ job, track, onSave, appliedListingIds }) {
+  const isApplied = appliedListingIds?.has(`${job.source}:${job.id}`) ?? false;
+
   return (
-    <article className="job">
+    <article className={`job${isApplied ? " job-applied" : ""}`}>
+      {isApplied && (
+        <p className="applied-badge">★ Applied, marked by me</p>
+      )}
+
       <h3>
         <BriefcaseBusiness size={18} aria-hidden="true" />
         {job.title} · {job.company || "Company not listed"}
@@ -113,7 +119,7 @@ function JobCard({ job, track, onSave }) {
       <SaveListingButton job={job} track={track} onSave={onSave} />
     </article>
   );
-} // end JobCard
+}
 
 export default function JobResults({
   track,
@@ -202,11 +208,13 @@ export default function JobResults({
               {section.note && <p>{section.note}</p>}
               {byScore(section.jobs).map((job) => (
                 <JobCard
-                  key={job.id}
-                  job={job}
-                  track={track}
-                  onSave={onSave}
-                />
+  key={job.id}
+  job={job}
+  track={track}
+  onSave={onSave}
+  appliedListingIds={appliedListingIds}
+/>
+
               ))}
             </Fragment>
           )
