@@ -1,5 +1,7 @@
+import InterviewRounds from "./InterviewRounds.jsx";
 import ResumeJobCheck from "../ResumeJobCheck.jsx";
 import { descriptionText } from "../descriptionText.js";
+import { roundsForJob } from "../interviews.js";
 
 const STATUS_LABELS = {
   saved: "Saved",
@@ -10,17 +12,15 @@ const STATUS_LABELS = {
   rejected: "Rejected"
 };
 
-function toDateTimeLocalValue(value) {
+function toDateInputValue(value) {
   if (!value) return "";
 
   const date = new Date(value);
 
-  return new Date(
-    date.getTime() - date.getTimezoneOffset() * 60000
-  )
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
     .toISOString()
-    .slice(0, 16);
-} // end toDateTimeLocalValue
+    .slice(0, 10);
+} // end toDateInputValue
 
 export default function SavedJobCard({
   job,
@@ -28,12 +28,14 @@ export default function SavedJobCard({
   skillText,
   request,
   onStatusChange,
+  onInterviewsChange,
   onError
 }) {
   const text = descriptionText(job.description);
+  const rounds = roundsForJob(job);
 
   return (
-    <article className="job">
+    <article className="job" id={`saved-job-${job._id}`}>
       <h3>
         {job.title} · {job.company}
       </h3>
@@ -74,75 +76,77 @@ export default function SavedJobCard({
         ))}
       </fieldset>
 
-      {job.status === "interview" && (
+      {(job.status === "interview" || rounds.length > 0) && (
+        <InterviewRounds
+          job={job}
+          onChange={(interviews) =>
+            onInterviewsChange(job._id, interviews)
+          }
+          onError={onError}
+        />
+      )}
+
+      {job.status !== "saved" && job.status !== "ready" && (
         <>
-          <label htmlFor={`interview-${job._id}`}>
-            Interview date and time
-          </label>
+          <label htmlFor={`applied-${job._id}`}>Date applied</label>
           <div className="interview-picker">
             <input
-              id={`interview-${job._id}`}
-              type="datetime-local"
-              defaultValue={toDateTimeLocalValue(job.interviewAt)}
+              id={`applied-${job._id}`}
+              key={job.appliedAt || "no-applied-date"}
+              type="date"
+              defaultValue={toDateInputValue(job.appliedAt)}
             />
-            <button
-              type="button"
-              onClick={() =>
-                document.getElementById(`interview-${job._id}`)?.showPicker()
-              }
-            >
-              Choose date and time
-            </button>
             <button
               type="button"
               onClick={() => {
                 const value = document.getElementById(
-                  `interview-${job._id}`
+                  `applied-${job._id}`
                 )?.value;
 
                 if (!value) {
-                  onError("Choose a complete interview date and time.");
+                  onError("Choose the date you applied.");
                   return;
                 }
 
-                void onStatusChange(
-                  job._id,
-                  "interview",
-                  new Date(value).toISOString()
-                );
+                void onStatusChange(job._id, job.status, {
+                  appliedAt: new Date(`${value}T00:00:00`).toISOString()
+                });
               }}
             >
-              Save interview date
+              Save applied date
             </button>
-            {job.interviewAt && (
+            <button
+              type="button"
+              onClick={() =>
+                void onStatusChange(job._id, job.status, {
+                  appliedAt: new Date().toISOString()
+                })
+              }
+            >
+              Today
+            </button>
+            {job.appliedAt && (
               <button
                 type="button"
-                onClick={() => {
-                  void onStatusChange(job._id, "interview", null);
-                }}
+                onClick={() =>
+                  void onStatusChange(job._id, job.status, {
+                    appliedAt: null
+                  })
+                }
               >
-                Remove interview date
+                Clear date
               </button>
             )}
           </div>
         </>
       )}
 
-      {job.interviewAt && (
-        <p className="interview-confirmation" role="status">
-          🎉 Interview scheduled for{" "}
-          <strong>
-            {new Date(job.interviewAt).toLocaleString([], {
-              dateStyle: "full",
-              timeStyle: "short"
-            })}
-          </strong>
-        </p>
-      )}
-
       {job.appliedAt && (
         <p>
-          Marked applied on {new Date(job.appliedAt).toLocaleDateString()}
+          Applied on{" "}
+          {new Date(job.appliedAt).toLocaleDateString([], {
+            dateStyle: "medium"
+          })}
         </p>
       )}
 

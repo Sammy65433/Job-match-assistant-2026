@@ -443,6 +443,160 @@
   color: #a7f3d0;
 } /* end confirmation strong */
 
+.page .job .interview-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+} /* end .interview-picker */
+
+.page .job .interview-picker input {
+  flex: 1 1 220px;
+  min-width: 0;
+} /* end .interview-picker input */
+
+.page .job {
+  scroll-margin-top: 24px;
+} /* end job anchor offset */
+
+/* ---------- Application tracker ---------- */
+.page .tracker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+} /* end .tracker */
+
+.page .tracker-group {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(34, 211, 238, 0.06);
+} /* end .tracker-group */
+
+.page .tracker-group h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+} /* end .tracker-group h3 */
+
+.page .tracker-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+} /* end .tracker-list */
+
+.page .tracker-list a {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--text);
+  text-decoration: none;
+} /* end .tracker-list a */
+
+.page .tracker-list a:hover {
+  border-color: var(--cyan);
+  background: rgba(34, 211, 238, 0.1);
+} /* end .tracker-list a:hover */
+
+.page .tracker-date {
+  color: var(--cyan);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+} /* end .tracker-date */
+
+/* ---------- Interview rounds ---------- */
+.page .interview-rounds {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(52, 211, 153, 0.06);
+} /* end .interview-rounds */
+
+.page .interview-rounds h4 {
+  margin: 0;
+  color: #fff;
+  font-size: 1rem;
+} /* end .interview-rounds h4 */
+
+.page .round-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+} /* end .round-list */
+
+.page .round-item {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.2);
+} /* end .round-item */
+
+.page .round-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+} /* end .round-head */
+
+.page .round-head strong {
+  color: #fff;
+} /* end .round-head strong */
+
+.page .round-head span {
+  color: var(--cyan);
+  font-size: 0.85rem;
+  font-weight: 700;
+} /* end .round-head span */
+
+.page .round-remove {
+  width: fit-content;
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+} /* end .round-remove */
+
+.page .round-meta,
+.page .round-notes {
+  display: block;
+  color: var(--text);
+  font-size: 0.88rem;
+  white-space: pre-line;
+} /* end round text */
+
+.page .round-add summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cyan);
+  font-weight: 700;
+  cursor: pointer;
+} /* end .round-add summary */
+
+.page .round-form {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+} /* end .round-form */
+
 /* ---------- Login page bits that LoginPage.css does not cover ---------- */
 .login-eyebrow,
 .login-track-list span {

@@ -16,7 +16,9 @@ I built this app to organize job searches across software engineering, data anal
 - Includes backend work toward location-based software/data searches and company job-board sources. These integrations should be verified before presenting them as complete.
 - Screens listings by title, apparent career level, and location text.
 - Lets users save source-linked listings or paste jobs found elsewhere.
-- Stores saved jobs and application statuses in MongoDB, scoped to each signed-in account.
+- Stores saved jobs, application statuses, applied dates, and interview times in MongoDB, scoped to each signed-in account.
+- Tracks applied jobs and interview rounds as a todo list in **Saved jobs**, with links back to each listing.
+- Saves multiple interview rounds per job with date/time, round name, contact, location or meeting link, and notes.
 - Supports email/password accounts and **Continue with Google**. Google verifies identity; MongoDB remains the account and job database.
 - Provides editable career-track skills and limited resume-text phrase and keyword-overlap checks.
 - Offers four views: **Find jobs**, **Preview a pasted job**, **Resume evidence**, and **Saved jobs**.

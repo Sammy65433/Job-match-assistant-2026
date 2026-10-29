@@ -68,7 +68,8 @@ Never commit `.env` or put backend secrets in Vite variables. Rotate any previou
 | `GET /api/saved-jobs?track=software` | List this user's saved jobs |
 | `POST /api/saved-jobs/from-listing` | Save a discovered listing |
 | `POST /api/saved-jobs` | Save a manually pasted job |
-| `PATCH /api/saved-jobs/:id/status` | Update this user's manually tracked status |
+| `PATCH /api/saved-jobs/:id/status` | Update status, applied date, or legacy interview date |
+| `PUT /api/saved-jobs/:id/interviews` | Replace interview rounds (date, round, contact, location, notes) |
 | `POST /api/matches/custom` | Preview manually entered required skills |
 | `POST /api/resume/compare-preview` | Manual resume phrase check |
 | `POST /api/resume/keyword-overlap` | Keyword-overlap check |

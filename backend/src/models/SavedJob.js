@@ -1,5 +1,16 @@
 import mongoose from "mongoose";
 
+const interviewSchema = new mongoose.Schema(
+  {
+    scheduledAt: { type: Date, required: true },
+    round: { type: String, default: "", trim: true, maxlength: 80 },
+    contact: { type: String, default: "", trim: true, maxlength: 120 },
+    location: { type: String, default: "", trim: true, maxlength: 300 },
+    notes: { type: String, default: "", trim: true, maxlength: 2000 }
+  },
+  { timestamps: true }
+);
+
 const savedJobSchema = new mongoose.Schema(
   {
     ownerId: {
@@ -32,13 +43,13 @@ const savedJobSchema = new mongoose.Schema(
       maxlength: 200
     },
     status: {
-  type: String,
-  enum: ["saved", "ready", "applied", "interview", "closed", "rejected"],
-  default: "saved"
-},
-appliedAt: { type: Date, default: null },
-interviewAt: { type: Date, default: null }
-
+      type: String,
+      enum: ["saved", "ready", "applied", "interview", "closed", "rejected"],
+      default: "saved"
+    },
+    appliedAt: { type: Date, default: null },
+    interviewAt: { type: Date, default: null },
+    interviews: { type: [interviewSchema], default: [] }
   },
   { timestamps: true }
 );

@@ -292,7 +292,7 @@ export default function App() {
     return data.savedJob;
   } // end saveListing
 
-  async function updateStatus(jobId, status, interviewAt) {
+  async function updateStatus(jobId, status, details = {}) {
     setSavedJobsError("");
 
     try {
@@ -301,10 +301,7 @@ export default function App() {
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            status,
-            ...(interviewAt !== undefined ? { interviewAt } : {})
-          })
+          body: JSON.stringify({ status, ...details })
         }
       );
 
@@ -315,6 +312,27 @@ export default function App() {
       setSavedJobsError(error.message);
     }
   } // end updateStatus
+
+  async function updateInterviews(jobId, interviews) {
+    setSavedJobsError("");
+
+    try {
+      const data = await request(
+        `/api/saved-jobs/${encodeURIComponent(jobId)}/interviews`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ interviews })
+        }
+      );
+
+      setSavedJobs((current) =>
+        current.map((job) => (job._id === jobId ? data.savedJob : job))
+      );
+    } catch (error) {
+      setSavedJobsError(error.message);
+    }
+  } // end updateInterviews
 
   if (!auth) {
     return (
@@ -430,6 +448,7 @@ export default function App() {
           skillText={skillText}
           request={request}
           onStatusChange={updateStatus}
+          onInterviewsChange={updateInterviews}
           onError={setSavedJobsError}
         />
       )}
