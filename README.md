@@ -8,7 +8,10 @@ I built this app to organize job searches across software engineering, data anal
 
 ## What it does
 
-- Searches remote software and data listings from Remotive, Jobicy, Himalayas, and The Muse.
+- Searches remote software and data listings from Remotive, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, and RemoteJobs.org.
+- Optionally adds USAJOBS, Reed, and Findwork when their API keys are configured.
+- Reads company boards from Greenhouse, Lever, Ashby, SmartRecruiters, and Workable.
+- Refreshes all discovery sources automatically every 24 hours and shows the last refresh time in the results.
 - Searches audio-related listings near Los Angeles and Newark/NYC through Adzuna.
 - Includes backend work toward location-based software/data searches and company job-board sources. These integrations should be verified before presenting them as complete.
 - Screens listings by title, apparent career level, and location text.

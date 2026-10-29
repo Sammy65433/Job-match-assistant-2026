@@ -23,7 +23,16 @@ const SOURCE_URLS = {
   Adzuna: "https://www.adzuna.com",
   Jooble: "https://jooble.org",
   Greenhouse: "https://www.greenhouse.com",
-  Lever: "https://www.lever.co"
+  Lever: "https://www.lever.co",
+  Ashby: "https://www.ashbyhq.com",
+  SmartRecruiters: "https://www.smartrecruiters.com",
+  Workable: "https://www.workable.com",
+  Arbeitnow: "https://www.arbeitnow.com",
+  RemoShift: "https://remoshift.com",
+  "RemoteJobs.org": "https://remotejobs.org",
+  USAJOBS: "https://www.usajobs.gov",
+  Reed: "https://www.reed.co.uk",
+  Findwork: "https://findwork.dev"
 };
 
 const AUDIO_GROUPS = [
@@ -129,6 +138,7 @@ export default function JobResults({
   loading,
   error,
   searched,
+  updatedAt = null,
   onSave,
   appliedListingIds = new Set()
 }) {
@@ -174,6 +184,15 @@ export default function JobResults({
         Many sources show only a short preview, so it is an estimate, not
         proof you qualify. Open each listing to review requirements, location,
         and whether it is still available.
+      </p>
+
+      <p className="refresh-note">
+        {updatedAt
+          ? `Listings refreshed ${new Date(updatedAt).toLocaleString([], {
+              dateStyle: "medium",
+              timeStyle: "short"
+            })}. Listings refresh automatically every 24 hours.`
+          : "Listings refresh automatically every 24 hours."}
       </p>
 
       {loading && <p role="status">Loading jobs...</p>}

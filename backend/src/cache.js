@@ -21,3 +21,14 @@ export async function cached(key, maxAgeMs, loader) {
 
   return value;
 } // end cached
+
+export function invalidateCache(prefix = "") {
+  if (!prefix) {
+    store.clear();
+    return;
+  } // end if clear all
+
+  for (const key of store.keys()) {
+    if (key.startsWith(prefix)) store.delete(key);
+  } // end for keys
+} // end invalidateCache

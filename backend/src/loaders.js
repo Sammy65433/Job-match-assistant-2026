@@ -1,7 +1,13 @@
+const COMPANY_BOARD_SOURCES = new Set([
+  "Greenhouse",
+  "Lever",
+  "Ashby",
+  "SmartRecruiters",
+  "Workable"
+]);
+
 export function statsKey(job) {
-  return job.source === "Greenhouse" || job.source === "Lever"
-    ? "Company boards"
-    : job.source;
+  return COMPANY_BOARD_SOURCES.has(job.source) ? "Company boards" : job.source;
 } // end statsKey
 
 export async function runLoaders(loaders) {

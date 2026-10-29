@@ -1,67 +1,55 @@
-import { useEffect, useState } from "react";
-import {
-  Bookmark,
-  BriefcaseBusiness,
-  ClipboardPaste,
-  FileCheck2,
-  LogOut,
-  Search
-} from "lucide-react";
+import { useCallback, useState } from "react";
+import { BriefcaseBusiness } from "lucide-react";
 
 import "./App.css";
 import { TRACKS, parseSkills } from "./tracks.js";
-import JobSearchForm from "./JobSearchForm.jsx";
 import ResumeComparison from "./ResumeComparison.jsx";
-import ResumeJobCheck from "./ResumeJobCheck.jsx";
 import LoginPage from "./LoginPage.jsx";
 import { apiRequest } from "./api.js";
 import { descriptionText } from "./descriptionText.js";
-import JobResults from "./JobResults.jsx";
+import AppNav from "./components/AppNav.jsx";
+import FindJobsView from "./components/FindJobsView.jsx";
+import PreviewJobView from "./components/PreviewJobView.jsx";
+import SavedJobsView from "./components/SavedJobsView.jsx";
+import { useAppliedListings } from "./hooks/useAppliedListings.js";
+import { useSavedJobs } from "./hooks/useSavedJobs.js";
 
-const STATUS_LABELS = {
-  saved: "Saved",
-  ready: "Ready to apply",
-  applied: "Applied (marked by me)",
-  interview: "Interview",
-  closed: "Closed",
-  rejected: "Rejected"
-};
+const SESSION_EXPIRED_NOTICE =
+  "Your session expired. Please sign in again.";
 
-const TABS = [
-  ["jobs", "Find jobs", Search],
-  ["preview", "Preview a pasted job", ClipboardPaste],
-  ["resume", "Resume evidence", FileCheck2],
-  ["saved", "Saved jobs", Bookmark]
-];
+function defaultSkillsByTrack() {
+  return {
+    software: TRACKS.software.defaultSkills,
+    data: TRACKS.data.defaultSkills,
+    audio: TRACKS.audio.defaultSkills
+  };
+} // end defaultSkillsByTrack
+
+function emptyResumeTextByTrack() {
+  return { software: "", data: "", audio: "" };
+} // end emptyResumeTextByTrack
 
 export default function App() {
   const [page, setPage] = useState("jobs");
   const [track, setTrack] = useState("software");
   const [auth, setAuth] = useState(null);
+  const [sessionNotice, setSessionNotice] = useState("");
 
-  const [skillsByTrack, setSkillsByTrack] = useState({
-    software: TRACKS.software.defaultSkills,
-    data: TRACKS.data.defaultSkills,
-    audio: TRACKS.audio.defaultSkills
-  });
-
-  const [resumeTextByTrack, setResumeTextByTrack] = useState({
-    software: "",
-    data: "",
-    audio: ""
-  });
-
-  const [savedJobs, setSavedJobs] = useState([]);
-  const [savedJobsLoading, setSavedJobsLoading] = useState(false);
-  const [workspaceError, setWorkspaceError] = useState("");
+  const [skillsByTrack, setSkillsByTrack] = useState(defaultSkillsByTrack);
+  const [resumeTextByTrack, setResumeTextByTrack] = useState(
+    emptyResumeTextByTrack
+  );
 
   const [remoteJobs, setRemoteJobs] = useState([]);
   const [remoteWarnings, setRemoteWarnings] = useState([]);
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteError, setRemoteError] = useState("");
   const [remoteSearched, setRemoteSearched] = useState(false);
+  const [remoteUpdatedAt, setRemoteUpdatedAt] = useState(null);
+
   const [mode, setMode] = useState("remote");
   const [area, setArea] = useState("newark");
+
   const [customMatch, setCustomMatch] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,49 +59,45 @@ export default function App() {
   const [company, setCompany] = useState("");
   const [description, setDescription] = useState("");
   const [requiredSkillText, setRequiredSkillText] = useState("");
-  const [sessionNotice, setSessionNotice] = useState("");
-  const [appliedListingIds, setAppliedListingIds] = useState(new Set());
 
-  useEffect(() => {
-    if (page !== "jobs" || !auth?.token) {
-      setAppliedListingIds(new Set());
-      return;
-    }
+  const changeAuth = useCallback((nextAuth, notice = "") => {
+    setAuth(nextAuth);
+    setSessionNotice(notice);
+    setFormError("");
+    setResumeTextByTrack(emptyResumeTextByTrack());
+    setSkillsByTrack(defaultSkillsByTrack());
+    setCustomMatch(null);
+    setTitle("");
+    setCompany("");
+    setDescription("");
+    setRequiredSkillText("");
+    setPage("jobs");
+  }, []);
 
-    let cancelled = false;
+  const handleSessionExpired = useCallback(() => {
+    changeAuth(null, SESSION_EXPIRED_NOTICE);
+  }, [changeAuth]);
 
-    async function loadAppliedListings() {
-      try {
-        const data = await apiRequest(
-          `/api/saved-jobs?track=${encodeURIComponent(track)}`,
-          {},
-          auth.token
-        );
+  const token = auth?.token ?? null;
 
-        if (!cancelled) {
-          setAppliedListingIds(
-            new Set(
-              (data.savedJobs || [])
-                .filter((job) => job.status === "applied" && job.sourceJobId)
-                .map((job) => `${job.source}:${job.sourceJobId}`)
-            )
-          );
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setAppliedListingIds(new Set());
-          console.error("Could not load applied listing markers:", error);
-        }
-      }
-    }
+  const {
+    savedJobs,
+    setSavedJobs,
+    loading: savedJobsLoading,
+    error: savedJobsError,
+    setError: setSavedJobsError
+  } = useSavedJobs({
+    enabled: page === "saved",
+    track,
+    token,
+    onSessionExpired: handleSessionExpired
+  });
 
-    void loadAppliedListings();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [page, track, auth?.token]);
-
+  const appliedListingIds = useAppliedListings({
+    enabled: page === "jobs",
+    track,
+    token
+  });
 
   const skillText = skillsByTrack[track];
 
@@ -123,19 +107,20 @@ export default function App() {
       path.startsWith("/api/resume/") ||
       path === "/api/matches/custom";
 
-    if (isPrivate && !auth?.token) {
+    if (isPrivate && !token) {
       throw new Error("Sign in to use this feature.");
     } // end if no token
 
     try {
-      return await apiRequest(path, options, isPrivate ? auth.token : null);
+      return await apiRequest(path, options, isPrivate ? token : null);
     } catch (error) {
       if (isPrivate && error.status === 401) {
-        changeAuth(null, "Your session expired. Please sign in again.");
+        changeAuth(null, SESSION_EXPIRED_NOTICE);
       } // end if expired
       throw error;
     } // end try/catch
   } // end request
+
   function post(path, body) {
     return request(path, {
       method: "POST",
@@ -144,74 +129,12 @@ export default function App() {
     });
   }
 
-  useEffect(() => {
-    if (page !== "saved" || !auth?.token) {
-      setSavedJobs([]);
-      setSavedJobsLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadSavedJobs() {
-      setSavedJobsLoading(true);
-      setWorkspaceError("");
-
-      try {
-        const data = await apiRequest(
-          `/api/saved-jobs?track=${encodeURIComponent(track)}`,
-          {},
-          auth.token
-        );
-
-        if (!cancelled) {
-          setSavedJobs(
-            Array.isArray(data.savedJobs) ? data.savedJobs : []
-          );
-        }
-      } catch (error) {
-        if (error.status === 401) {
-          changeAuth(null, "Your session expired. Please sign in again.");
-        } else {
-          setWorkspaceError(error.message);
-        } // end if expired
-      } finally {
-        if (!cancelled) setSavedJobsLoading(false);
-      }
-    }
-
-    void loadSavedJobs();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [page, track, auth?.token]);
-
-  function changeAuth(nextAuth, notice = "") {
-    setAuth(nextAuth);
-    setSessionNotice(notice);
-    setSavedJobs([]);
-    setWorkspaceError("");
-    setFormError("");
-    setResumeTextByTrack({ software: "", data: "", audio: "" });
-    setSkillsByTrack({
-      software: TRACKS.software.defaultSkills,
-      data: TRACKS.data.defaultSkills,
-      audio: TRACKS.audio.defaultSkills
-    });
-    setCustomMatch(null);
-    setTitle("");
-    setCompany("");
-    setDescription("");
-    setRequiredSkillText("");
-    setPage("jobs");
-  } // end changeAuth
-
   function clearResults() {
     setRemoteJobs([]);
     setRemoteWarnings([]);
     setRemoteError("");
     setRemoteSearched(false);
+    setRemoteUpdatedAt(null);
   } // end clearResults
 
   function changeTrack(nextTrack) {
@@ -254,6 +177,7 @@ export default function App() {
       const data = await request(jobsUrl());
       setRemoteJobs(Array.isArray(data.jobs) ? data.jobs : []);
       setRemoteWarnings(Array.isArray(data.errors) ? data.errors : []);
+      setRemoteUpdatedAt(data.updatedAt || null);
     } catch (error) {
       setRemoteError(error.message);
     } finally {
@@ -267,6 +191,7 @@ export default function App() {
     void loadRemoteJobs();
     document.getElementById("job-results")?.scrollIntoView();
   } // end findRealJobs
+
   async function previewCustomJob(event) {
     event.preventDefault();
 
@@ -296,7 +221,7 @@ export default function App() {
     } finally {
       setPreviewLoading(false);
     }
-  }
+  } // end previewCustomJob
 
   async function saveJob() {
     const requiredSkills = parseSkills(requiredSkillText);
@@ -334,7 +259,7 @@ export default function App() {
     } finally {
       setSaving(false);
     }
-  }
+  } // end saveJob
 
   async function saveListing(job, listingTrack) {
     if (!job.url || !job.source || !job.id) {
@@ -342,18 +267,14 @@ export default function App() {
     }
 
     const data = await post("/api/saved-jobs/from-listing", {
-
       track: listingTrack,
       title: String(job.title || "").trim().slice(0, 150),
-      company: String(job.company || "Company not listed")
-        .trim()
-        .slice(0, 150),
+      company: String(job.company || "Company not listed").trim().slice(0, 150),
       description: descriptionText(job.description || "").slice(0, 10000),
       source: job.source,
       sourceJobId: String(job.id).slice(0, 200),
       url: job.url
     });
-
 
     if (listingTrack === track) {
       setSavedJobs((current) =>
@@ -364,10 +285,10 @@ export default function App() {
     }
 
     return data.savedJob;
-  }
+  } // end saveListing
 
   async function updateStatus(jobId, status, interviewAt) {
-    setWorkspaceError("");
+    setSavedJobsError("");
 
     try {
       const data = await request(
@@ -386,10 +307,9 @@ export default function App() {
         current.map((job) => (job._id === jobId ? data.savedJob : job))
       );
     } catch (error) {
-      setWorkspaceError(error.message);
+      setSavedJobsError(error.message);
     }
-  }
-
+  } // end updateStatus
 
   if (!auth) {
     return (
@@ -408,27 +328,15 @@ export default function App() {
         Job Match Assistant
       </h1>
       <p>
-        Find real listings, review requirements, and track jobs you
-        save. Discovery results are not verified resume matches.
+        Find real listings, review requirements, and track jobs you save.
+        Discovery results are not verified resume matches.
       </p>
 
-      <nav aria-label="App views" className="page-nav">
-        {TABS.map(([id, label, Icon]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setPage(id)}
-            aria-current={page === id ? "page" : undefined}
-          >
-            <Icon size={18} aria-hidden="true" />
-            {label}
-          </button>
-        ))}
-        <button type="button" onClick={() => changeAuth(null)}>
-          <LogOut size={18} aria-hidden="true" />
-          Sign out
-        </button>
-      </nav>
+      <AppNav
+        page={page}
+        onChangePage={setPage}
+        onSignOut={() => changeAuth(null)}
+      />
 
       <p>Signed in as {auth.user.email}</p>
 
@@ -446,131 +354,48 @@ export default function App() {
       </select>
 
       {page === "jobs" && (
-        <>
-          <JobSearchForm
-            track={track}
-            mode={mode}
-            area={area}
-            skillText={skillText}
-            loading={remoteLoading}
-            onSkillChange={(text) =>
-              setSkillsByTrack((current) => ({
-                ...current,
-                [track]: text
-              }))
-            }
-            onModeChange={changeMode}
-            onAreaChange={changeArea}
-            onSubmit={findRealJobs}
-          />
-
-          <section id="job-results" aria-label="Real job results">
-            <JobResults
-              track={track}
-              mode={mode}
-              jobs={remoteJobs}
-              warnings={remoteWarnings}
-              loading={remoteLoading}
-              error={remoteError}
-              searched={remoteSearched}
-              onSave={saveListing}
-              appliedListingIds={appliedListingIds}
-            />
-
-          </section>
-        </>
+        <FindJobsView
+          track={track}
+          mode={mode}
+          area={area}
+          skillText={skillText}
+          loading={remoteLoading}
+          jobs={remoteJobs}
+          warnings={remoteWarnings}
+          error={remoteError}
+          searched={remoteSearched}
+          updatedAt={remoteUpdatedAt}
+          appliedListingIds={appliedListingIds}
+          onSkillChange={(text) =>
+            setSkillsByTrack((current) => ({
+              ...current,
+              [track]: text
+            }))
+          }
+          onModeChange={changeMode}
+          onAreaChange={changeArea}
+          onSubmit={findRealJobs}
+          onSave={saveListing}
+        />
       )}
 
       {page === "preview" && (
-        <section aria-label="Custom job preview">
-          <h2>
-            <ClipboardPaste size={22} aria-hidden="true" />
-            Preview a pasted job
-          </h2>
-          <p>
-            Found a job outside this app? Enter its title, company, description,
-            and required skills below. The preview compares those required skills
-            with your editable career-track skill list. The percentage is a
-            screening estimate, not proof that you qualify. You can save the job
-            afterward.
-          </p>
-
-          <p>
-            Enter required skills from the listing. This preview uses
-            your editable skills, not verified resume evidence.
-          </p>
-
-          <form onSubmit={previewCustomJob}>
-            <label htmlFor="job-title">Job title</label>
-            <input
-              id="job-title"
-              required
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-            />
-
-            <label htmlFor="company">Company</label>
-            <input
-              id="company"
-              required
-              value={company}
-              onChange={(event) => setCompany(event.target.value)}
-            />
-
-            <label htmlFor="description">Job description</label>
-            <textarea
-              id="description"
-              required
-              rows={5}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-            />
-
-            <label htmlFor="required-skills">
-              Required skills, separated by commas
-            </label>
-            <textarea
-              id="required-skills"
-              required
-              rows={2}
-              value={requiredSkillText}
-              onChange={(event) =>
-                setRequiredSkillText(event.target.value)
-              }
-            />
-
-            <button type="submit" disabled={previewLoading}>
-              {previewLoading ? "Checking..." : "Preview match"}
-            </button>
-          </form>
-
-          {formError && (
-            <p role="alert" className="error">
-              {formError}
-            </p>
-          )}
-
-          {customMatch && (
-            <article className="job">
-              <h3>
-                {customMatch.title} · {customMatch.company}
-              </h3>
-              <p>
-                {customMatch.score}% match against manually entered
-                skills. This is a screening estimate, not proof of
-                qualification.
-              </p>
-              <p>
-                <strong>Missing:</strong>{" "}
-                {customMatch.missingSkills.join(", ") || "None"}
-              </p>
-            </article>
-          )}
-
-          <button type="button" onClick={saveJob} disabled={saving}>
-            {saving ? "Saving..." : "Save pasted job"}
-          </button>
-        </section>
+        <PreviewJobView
+          title={title}
+          company={company}
+          description={description}
+          requiredSkillText={requiredSkillText}
+          previewLoading={previewLoading}
+          saving={saving}
+          formError={formError}
+          customMatch={customMatch}
+          onTitleChange={setTitle}
+          onCompanyChange={setCompany}
+          onDescriptionChange={setDescription}
+          onRequiredSkillChange={setRequiredSkillText}
+          onSubmit={previewCustomJob}
+          onSave={saveJob}
+        />
       )}
 
       {page === "resume" && (
@@ -590,178 +415,17 @@ export default function App() {
       )}
 
       {page === "saved" && (
-        <>
-          {workspaceError && (
-            <p role="alert" className="error">
-              {workspaceError}
-            </p>
-          )}
-
-          <section aria-label="Saved jobs">
-            <h2>
-              <Bookmark size={22} aria-hidden="true" />
-              Saved jobs: {TRACKS[track].label}
-            </h2>
-
-            {savedJobsLoading && <p>Loading saved jobs...</p>}
-
-            {!savedJobsLoading &&
-              !workspaceError &&
-              savedJobs.length === 0 && (
-                <p>No jobs saved for this track yet.</p>
-              )}
-
-            {savedJobs.map((job) => (
-              <article key={job._id} className="job">
-                <h3>
-                  {job.title} · {job.company}
-                </h3>
-
-                {job.description && (
-                  <>
-                    <p>
-                      {descriptionText(job.description).slice(0, 180)}
-                      {descriptionText(job.description).length > 180
-                        ? "…"
-                        : ""}
-                    </p>
-                    <details>
-                      <summary>View job description</summary>
-                      <p style={{ whiteSpace: "pre-line" }}>
-                        {descriptionText(job.description)}
-                      </p>
-                    </details>
-                  </>
-                )}
-
-                <p>
-                  <strong>Required:</strong>{" "}
-                  {job.requiredSkills?.length
-                    ? job.requiredSkills.join(", ")
-                    : "Requirements not reviewed"}
-                </p>
-                <fieldset>
-                  <legend>Application status</legend>
-                  {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                    <label key={value} style={{ display: "block" }}>
-                      <input
-                        type="radio"
-                        name={`status-${job._id}`}
-                        value={value}
-                        checked={(job.status || "saved") === value}
-                        onChange={() => updateStatus(job._id, value)}
-                      />{" "}
-                      {label}
-                    </label>
-                  ))}
-                </fieldset>
-
-                {job.status === "interview" && (
-                  <>
-                    <label htmlFor={`interview-${job._id}`}>
-                      Interview date and time
-                    </label>
-                    <div className="interview-picker">
-                      <input
-                        id={`interview-${job._id}`}
-                        type="datetime-local"
-                        defaultValue={
-                          job.interviewAt
-                            ? new Date(
-                              new Date(job.interviewAt).getTime() -
-                              new Date(job.interviewAt).getTimezoneOffset() * 60000
-                            ).toISOString().slice(0, 16)
-                            : ""
-                        }
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          document.getElementById(`interview-${job._id}`)?.showPicker()
-                        }
-                      >
-                        Choose date and time
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const value = document.getElementById(`interview-${job._id}`)?.value;
-                          if (!value) {
-                            setWorkspaceError("Choose a complete interview date and time.");
-                            return;
-                          }
-                          void updateStatus(job._id, "interview", new Date(value).toISOString());
-                        }}
-                      >
-                        Save interview date
-                      </button>
-                      {job.interviewAt && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            void updateStatus(job._id, "interview", null);
-                          }}
-                        >
-                          Remove interview date
-                        </button>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {job.interviewAt && (
-                  <p className="interview-confirmation" role="status">
-                    🎉 Interview scheduled for{" "}
-                    <strong>
-                      {new Date(job.interviewAt).toLocaleString([], {
-                        dateStyle: "full",
-                        timeStyle: "short"
-                      })}
-                    </strong>
-                  </p>
-                )}
-
-                {job.appliedAt && (
-                  <p>
-                    Marked applied on{" "}
-                    {new Date(job.appliedAt).toLocaleDateString()}
-                  </p>
-                )}
-
-                <ResumeJobCheck
-                  job={job}
-                  resumeText={resumeTextByTrack[track]}
-                  skillText={skillText}
-                  request={request}
-                />
-
-                {job.url && (
-                  <p>
-                    <a
-                      href={job.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Open application on{" "}
-                      {job.source || "source site"}
-                    </a>
-                  </p>
-                )}
-
-                {job.status !== "applied" && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateStatus(job._id, "applied")
-                    }
-                  >
-                    Mark applied
-                  </button>
-                )}
-              </article>
-            ))}
-          </section>
-        </>
+        <SavedJobsView
+          track={track}
+          savedJobs={savedJobs}
+          loading={savedJobsLoading}
+          error={savedJobsError}
+          resumeText={resumeTextByTrack[track]}
+          skillText={skillText}
+          request={request}
+          onStatusChange={updateStatus}
+          onError={setSavedJobsError}
+        />
       )}
     </main>
   );

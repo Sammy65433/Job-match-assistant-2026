@@ -1,4 +1,13 @@
-const REMOTE_ONLY_SOURCES = new Set(["Remotive", "Jobicy", "Himalayas"]);
+const REMOTE_ONLY_SOURCES = new Set([
+  "Remotive",
+  "Jobicy",
+  "Himalayas",
+  "Arbeitnow",
+  "RemoShift",
+  "RemoteJobs.org",
+  "Reed",
+  "Findwork"
+]);
 
 export function detectWorkMode(job) {
   if (REMOTE_ONLY_SOURCES.has(job.source)) return "remote";

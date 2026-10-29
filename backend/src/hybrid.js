@@ -7,8 +7,7 @@ import { getJoobleJobs } from "./jooble.js";
 import { runLoaders, statsKey } from "./loaders.js";
 import { titleMatchesTrack, SENIOR_TITLE, ENTRY_TITLE } from "./discover.js";
 import { detectWorkMode } from "./workMode.js";
-
-const HOUR = 60 * 60 * 1000;
+import { CACHE_TTL_MS } from "./config.js";
 
 const AREAS = {
   los_angeles: {
@@ -69,14 +68,14 @@ export async function discoverHybridJobs(track, area) {
     {
       name: "The Muse",
       run: () =>
-        cached(`muse-${track}-${area}`, 3 * HOUR, () =>
+        cached(`muse-${track}-${area}`, CACHE_TTL_MS, () =>
           getMuseJobs({ track, location: AREAS[area].museLocations })
         )
     },
     {
       name: "Jooble",
       run: () =>
-        cached(`jooble-${track}-${area}-hybrid`, 3 * HOUR, () =>
+        cached(`jooble-${track}-${area}-hybrid`, CACHE_TTL_MS, () =>
           getJoobleJobs({
             track,
             location: AREAS[area].joobleLocation,
@@ -87,7 +86,7 @@ export async function discoverHybridJobs(track, area) {
     {
       name: "Company boards",
       run: async () => {
-        const { jobs, errors } = await cached("boards-all", 3 * HOUR, () =>
+        const { jobs, errors } = await cached("boards-all", CACHE_TTL_MS, () =>
           getAllBoardJobs(COMPANY_BOARDS)
         );
 

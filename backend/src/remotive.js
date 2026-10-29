@@ -1,5 +1,7 @@
+import { CACHE_TTL_MS } from "./config.js";
+
 const REMOTIVE_URL = "https://remotive.com/api/remote-jobs";
-const CACHE_MS = 6 * 60 * 60 * 1000;
+const CACHE_MS = CACHE_TTL_MS;
 
 let cachedJobs = null;
 let cachedAt = 0;

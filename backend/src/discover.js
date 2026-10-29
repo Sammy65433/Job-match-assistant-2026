@@ -7,8 +7,13 @@ import { getAllBoardJobs } from "./boards.js";
 import { COMPANY_BOARDS } from "../data/companyBoards.js";
 import { runLoaders, statsKey } from "./loaders.js";
 import { getJoobleJobs } from "./jooble.js";
-
-const HOUR = 60 * 60 * 1000;
+import { getArbeitnowJobs } from "./arbeitnow.js";
+import { getRemoShiftJobs } from "./remoshift.js";
+import { getRemoteJobsOrgJobs } from "./remotejobs.js";
+import { getUsaJobs } from "./usajobs.js";
+import { getReedJobs } from "./reed.js";
+import { getFindworkJobs } from "./findwork.js";
+import { CACHE_TTL_MS } from "./config.js";
 
 const SOFTWARE_TITLE =
   /\b(software (engineer|developer)|web developer|front[\s-]?end (engineer|developer)|back[\s-]?end (engineer|developer)|full[\s-]?stack (engineer|developer)|react developer|javascript developer|node(?:\.js)? developer)\b/i;
@@ -37,8 +42,25 @@ const CANADA_LOCATION = /\bcanada\b/i;
 
 const GLOBAL_LOCATION = /\b(worldwide|global|anywhere)\b/i;
 
-const OTHER_REGION_LOCATION =
-  /\b(hungary|bulgaria|poland|romania|ukraine|serbia|turkey|united kingdom|uk|ireland|europe|emea|germany|france|spain|portugal|italy|netherlands|sweden|norway|denmark|finland|switzerland|austria|apac|asia|india|philippines|singapore|japan|china|australia|new zealand|latam|latin america|south america|brazil|mexico|argentina|colombia|africa|middle east)\b/i;
+const OTHER_REGION_WORDS = [
+  "hungary", "bulgaria", "poland", "romania", "ukraine", "serbia", "turkey",
+  "united kingdom", "uk", "ireland", "europe", "emea", "germany", "france",
+  "spain", "portugal", "italy", "netherlands", "sweden", "norway", "denmark",
+  "finland", "switzerland", "austria", "apac", "asia", "india", "philippines",
+  "singapore", "japan", "china", "australia", "new zealand", "latam",
+  "latin america", "south america", "brazil", "mexico", "argentina",
+  "colombia", "africa", "middle east",
+  "berlin", "munich", "hamburg", "cologne", "frankfurt", "stuttgart",
+  "vienna", "zurich", "amsterdam", "paris", "madrid", "barcelona", "lisbon",
+  "dublin", "london", "manchester", "birmingham", "edinburgh", "glasgow",
+  "warsaw", "krakow", "prague", "budapest", "bucharest", "sofia", "athens",
+  "stockholm", "copenhagen", "oslo", "helsinki", "brussels", "milan", "rome"
+];
+
+const OTHER_REGION_LOCATION = new RegExp(
+  `\\b(${OTHER_REGION_WORDS.join("|")})\\b`,
+  "i"
+);
 
 export function classifyLocation(location) {
   const text = typeof location === "string" ? location.trim() : "";
@@ -84,7 +106,7 @@ function classifyJob(job, track) {
 /* ---------- Sources ---------- */
 
 async function loadRemotive(track) {
-  const allJobs = await cached("remotive-all", 6 * HOUR, getRemotiveJobs);
+  const allJobs = await cached("remotive-all", CACHE_TTL_MS, getRemotiveJobs);
   const selected = selectRemotiveJobs(allJobs, track);
 
   return selected.map((job) => ({
@@ -95,7 +117,7 @@ async function loadRemotive(track) {
 } // end loadRemotive
 
 async function loadRemoteBoards() {
-  const { jobs, errors } = await cached("boards-all", 3 * HOUR, () =>
+  const { jobs, errors } = await cached("boards-all", CACHE_TTL_MS, () =>
     getAllBoardJobs(COMPANY_BOARDS)
   );
 
@@ -115,16 +137,16 @@ export async function discoverRemoteJobs(track) {
     {
       name: "Jobicy",
       run: () =>
-        cached(`jobicy-${track}`, 3 * HOUR, () => getJobicyJobs(track))
+        cached(`jobicy-${track}`, CACHE_TTL_MS, () => getJobicyJobs(track))
     },
     {
       name: "Himalayas",
-      run: () => cached("himalayas", 6 * HOUR, getHimalayasJobs)
+      run: () => cached("himalayas", CACHE_TTL_MS, getHimalayasJobs)
     },
     {
       name: "The Muse",
       run: () =>
-        cached(`muse-${track}-remote`, 3 * HOUR, () =>
+        cached(`muse-${track}-remote`, CACHE_TTL_MS, () =>
           getMuseJobs({ track, location: "Flexible / Remote" })
         )
         
@@ -132,7 +154,7 @@ export async function discoverRemoteJobs(track) {
         {
       name: "Jooble",
       run: () =>
-        cached(`jooble-${track}-remote`, 3 * HOUR, async () => {
+        cached(`jooble-${track}-remote`, CACHE_TTL_MS, async () => {
           const list = await getJoobleJobs({
             track,
             location: "United States",
@@ -144,8 +166,53 @@ export async function discoverRemoteJobs(track) {
           );
         })
     },
+    {
+      name: "Arbeitnow",
+      run: () =>
+        cached("arbeitnow-remote", CACHE_TTL_MS, () =>
+          getArbeitnowJobs({ remoteOnly: true })
+        )
+    },
+    {
+      name: "RemoShift",
+      run: () =>
+        cached(`remoshift-${track}`, CACHE_TTL_MS, () =>
+          getRemoShiftJobs(track)
+        )
+    },
+    {
+      name: "RemoteJobs.org",
+      run: () =>
+        cached("remotejobs-all", CACHE_TTL_MS, getRemoteJobsOrgJobs)
+    },
     { name: "Company boards", run: () => loadRemoteBoards() }
   ]; // end loaders
+
+  if (process.env.USAJOBS_API_KEY && process.env.USAJOBS_EMAIL) {
+    loaders.push({
+      name: "USAJOBS",
+      run: () =>
+        cached(`usajobs-${track}`, CACHE_TTL_MS, () => getUsaJobs({ track }))
+    });
+  } // end if USAJOBS configured
+
+  if (process.env.REED_API_KEY) {
+    loaders.push({
+      name: "Reed",
+      run: () =>
+        cached(`reed-${track}`, CACHE_TTL_MS, () => getReedJobs({ track }))
+    });
+  } // end if Reed configured
+
+  if (process.env.FINDWORK_API_KEY) {
+    loaders.push({
+      name: "Findwork",
+      run: () =>
+        cached(`findwork-${track}`, CACHE_TTL_MS, () =>
+          getFindworkJobs({ track })
+        )
+    });
+  } // end if Findwork configured
 
   const { jobs, errors, stats } = await runLoaders(loaders);
   const seen = new Set();
