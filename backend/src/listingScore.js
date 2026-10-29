@@ -1,5 +1,8 @@
 const MIN_DETECTED = 3;
 
+const toTenScale = (matched, total) =>
+  total ? Math.max(1, Math.round((matched / total) * 100) / 10) : 0;
+
 // Skills we look for in listing text. Add terms here to tune detection.
 const VOCAB = {
   software: [
@@ -56,7 +59,7 @@ export function withScores(jobs, track, skills) {
 
     return {
       ...job,
-      matchScore: Math.round((matchedSkills.length / detected.length) * 100),
+      matchScore: toTenScale(matchedSkills.length, detected.length),
       matchedSkills,
       missingSkills
     };

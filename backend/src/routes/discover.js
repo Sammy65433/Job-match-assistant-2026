@@ -14,6 +14,10 @@ function refreshedAt() {
   return getRefreshStatus().lastRefreshAt;
 } // end refreshedAt
 
+function refreshTtlHours() {
+  return getRefreshStatus().ttlHours;
+} // end refreshTtlHours
+
 router.get("/status", (_req, res) => {
   res.json(getRefreshStatus());
 });
@@ -39,7 +43,8 @@ router.get("/remote", async (req, res) => {
       ),
       errors,
       stats,
-      updatedAt: refreshedAt()
+      updatedAt: refreshedAt(),
+      ttlHours: refreshTtlHours()
     });
   } catch (error) {
     console.error("Could not discover remote jobs:", error);
@@ -69,7 +74,8 @@ router.get("/hybrid", async (req, res) => {
       jobs: withScores(found, track, parseSkillsQuery(req.query.skills)),
       errors,
       stats,
-      updatedAt: refreshedAt()
+      updatedAt: refreshedAt(),
+      ttlHours: refreshTtlHours()
     });
   } catch (error) {
     console.error("Could not discover hybrid jobs:", error.message);
@@ -99,7 +105,8 @@ router.get("/audio", async (req, res) => {
       mode,
       attribution: "Open each listing using its Adzuna redirect link.",
       jobs: withScores(found, "audio", parseSkillsQuery(req.query.skills)),
-      updatedAt: refreshedAt()
+      updatedAt: refreshedAt(),
+      ttlHours: refreshTtlHours()
     });
   } catch (error) {
     console.error("Audio discovery failed:", error.message);

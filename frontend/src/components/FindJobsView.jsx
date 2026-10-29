@@ -12,6 +12,7 @@ export default function FindJobsView({
   error,
   searched,
   updatedAt,
+  refreshHours,
   appliedListingIds,
   onSkillChange,
   onModeChange,
@@ -43,6 +44,7 @@ export default function FindJobsView({
           error={error}
           searched={searched}
           updatedAt={updatedAt}
+          refreshHours={refreshHours}
           onSave={onSave}
           appliedListingIds={appliedListingIds}
         />

@@ -54,7 +54,7 @@ export default function JobSearchForm({
       )}
 
       <p>
-        Your skills are used to estimate a match percentage on each
+        Your skills are used to estimate a 1.0–10.0 fit score on each
         listing and to compare saved jobs. They do not filter results.
         Salary filtering is not available for the current sources.
       </p>

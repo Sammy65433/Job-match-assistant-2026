@@ -1,5 +1,47 @@
 
-export const MATCH_ALERT_THRESHOLD = 65;
+export const MATCH_ALERT_THRESHOLD = 8;
+
+export const FIT_TIERS = [
+  {
+    min: 9,
+    label: "Perfect fit",
+    tagline: "Spot-on! This is your ideal fit — go for it.",
+    tone: "perfect"
+  },
+  {
+    min: 8,
+    label: "Great fit",
+    tagline: "Strong match — definitely worth applying.",
+    tone: "great"
+  },
+  {
+    min: 7,
+    label: "Good fit",
+    tagline: "Solid overlap — review the listing and apply.",
+    tone: "good"
+  },
+  {
+    min: 5,
+    label: "Possible fit",
+    tagline: "Some overlap — check the details before applying.",
+    tone: "possible"
+  },
+  {
+    min: 1,
+    label: "Stretch",
+    tagline: "Low overlap — apply only if the role still fits your goals.",
+    tone: "stretch"
+  }
+];
+
+export function fitForScore(score) {
+  if (typeof score !== "number" || score <= 0) return null;
+  return FIT_TIERS.find((tier) => score >= tier.min) ?? FIT_TIERS.at(-1);
+}
+
+export function formatScore(score) {
+  return Number(score).toFixed(1);
+}
 
 export const MODES = {
   remote: "Remote",

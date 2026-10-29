@@ -1,4 +1,5 @@
 import { ClipboardPaste } from "lucide-react";
+import { fitForScore, formatScore } from "../tracks.js";
 
 export default function PreviewJobView({
   title,
@@ -16,6 +17,8 @@ export default function PreviewJobView({
   onSubmit,
   onSave
 }) {
+  const fit = customMatch ? fitForScore(customMatch.score) : null;
+
   return (
     <section aria-label="Custom job preview">
       <h2>
@@ -25,9 +28,9 @@ export default function PreviewJobView({
       <p>
         Found a job outside this app? Enter its title, company, description,
         and required skills below. The preview compares those required skills
-        with your editable career-track skill list. The percentage is a
-        screening estimate, not proof that you qualify. You can save the job
-        afterward.
+        with your editable career-track skill list and gives a 1.0–10.0 fit
+        score. It is a screening estimate, not proof that you qualify. You can
+        save the job afterward.
       </p>
 
       <p>
@@ -88,10 +91,25 @@ export default function PreviewJobView({
           <h3>
             {customMatch.title} · {customMatch.company}
           </h3>
-          <p>
-            {customMatch.score}% match against manually entered skills. This is
-            a screening estimate, not proof of qualification.
-          </p>
+          {fit ? (
+            <div className={`fit-card fit-${fit.tone}`}>
+              <div className="fit-score-row">
+                <span className="fit-score">
+                  {formatScore(customMatch.score)}
+                </span>
+                <span className="fit-scale">/ 10</span>
+              </div>
+              <div>
+                <strong className="fit-label">{fit.label}</strong>
+                <p className="fit-tagline">
+                  {fit.tagline} This is a screening estimate, not proof of
+                  qualification.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p>Add at least one required skill to get a fit score.</p>
+          )}
           <p>
             <strong>Missing:</strong>{" "}
             {customMatch.missingSkills.join(", ") || "None"}

@@ -7,7 +7,12 @@ import {
   SearchCheck
 } from "lucide-react";
 import SaveListingButton from "./SaveListingButton.jsx";
-import { MATCH_ALERT_THRESHOLD, MODES } from "./tracks.js";
+import {
+  fitForScore,
+  formatScore,
+  MATCH_ALERT_THRESHOLD,
+  MODES
+} from "./tracks.js";
 
 const LOCATION_LABELS = {
   "us-mentioned": "USA mentioned, eligibility unverified",
@@ -54,24 +59,35 @@ function byScore(list) {
 function MatchLine({ job }) {
   if (!hasScore(job)) {
     return (
-      <p>Match estimate: not enough skill keywords in the listing text.</p>
+      <p>Fit score: not enough skill keywords in the listing text.</p>
     );
   } // end if no score
 
-  const strong = job.matchScore >= MATCH_ALERT_THRESHOLD;
+  const fit = fitForScore(job.matchScore);
+
+  if (!fit) {
+    return (
+      <p>Fit score: not enough skill keywords in the listing text.</p>
+    );
+  } // end if score out of range
 
   return (
     <>
-      <p>
-        {strong ? (
-          <span className="badge">
-            <BellRing size={14} aria-hidden="true" /> {job.matchScore}% skills
-            match
-          </span>
-        ) : (
-          <span>{job.matchScore}% skills match</span>
-        )}
-      </p>
+      <div className={`fit-card fit-${fit.tone}`}>
+        <div className="fit-score-row">
+          <span className="fit-score">{formatScore(job.matchScore)}</span>
+          <span className="fit-scale">/ 10</span>
+        </div>
+        <div>
+          <strong className="fit-label">
+            {job.matchScore >= MATCH_ALERT_THRESHOLD && (
+              <BellRing size={14} aria-hidden="true" />
+            )}
+            {fit.label}
+          </strong>
+          <p className="fit-tagline">{fit.tagline}</p>
+        </div>
+      </div>
       {job.missingSkills?.length > 0 && (
         <p>Listing mentions, not in your skills: {job.missingSkills.join(", ")}</p>
       )}
@@ -139,6 +155,7 @@ export default function JobResults({
   error,
   searched,
   updatedAt = null,
+  refreshHours = null,
   onSave,
   appliedListingIds = new Set()
 }) {
@@ -179,11 +196,11 @@ export default function JobResults({
         {MODES[mode]} jobs
       </h2>
       <p>
-        Job-title and text screening only. The match percentage is the share
-        of skills named in the listing text that are also in your skill list.
-        Many sources show only a short preview, so it is an estimate, not
-        proof you qualify. Open each listing to review requirements, location,
-        and whether it is still available.
+        Job-title and text screening only. The fit score runs from 1.0 to 10.0
+        and is the share of skills named in the listing text that are also in
+        your skill list. Many sources show only a short preview, so it is an
+        estimate, not proof you qualify. Open each listing to review
+        requirements, location, and whether it is still available.
       </p>
 
       <p className="refresh-note">
@@ -191,8 +208,10 @@ export default function JobResults({
           ? `Listings refreshed ${new Date(updatedAt).toLocaleString([], {
               dateStyle: "medium",
               timeStyle: "short"
-            })}. Listings refresh automatically every 24 hours.`
-          : "Listings refresh automatically every 24 hours."}
+            })}.`
+          : ""}{" "}
+        Listings refresh{" "}
+        {refreshHours ? `every ${refreshHours} hours` : "automatically"}.
       </p>
 
       {loading && <p role="status">Loading jobs...</p>}
@@ -210,10 +229,11 @@ export default function JobResults({
           <BellRing size={16} aria-hidden="true" />
           {strongMatches.length} listing
           {strongMatches.length === 1 ? "" : "s"} at or above{" "}
-          {MATCH_ALERT_THRESHOLD}% skills match. Top: {strongMatches[0].title}
+          {formatScore(MATCH_ALERT_THRESHOLD)}/10 fit. Top:{" "}
+          {strongMatches[0].title}
           {" · "}
           {strongMatches[0].company || "Company not listed"} (
-          {strongMatches[0].matchScore}%)
+          {formatScore(strongMatches[0].matchScore)}/10)
         </p>
       )}
 

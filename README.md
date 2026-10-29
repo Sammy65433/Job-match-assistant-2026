@@ -11,7 +11,7 @@ I built this app to organize job searches across software engineering, data anal
 - Searches remote software and data listings from Remotive, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, and RemoteJobs.org.
 - Optionally adds USAJOBS, Reed, and Findwork when their API keys are configured.
 - Reads company boards from Greenhouse, Lever, Ashby, SmartRecruiters, and Workable.
-- Refreshes all discovery sources automatically every 24 hours and shows the last refresh time in the results.
+- Refreshes all discovery sources automatically every 12 hours by default (`JOB_REFRESH_HOURS`) and shows the last refresh time in the results.
 - Searches audio-related listings near Los Angeles and Newark/NYC through Adzuna.
 - Includes backend work toward location-based software/data searches and company job-board sources. These integrations should be verified before presenting them as complete.
 - Screens listings by title, apparent career level, and location text.
@@ -43,7 +43,7 @@ The frontend never connects directly to MongoDB. Job-source credentials and the 
 
 Discovery results are **search candidates**, not verified resume matches. Labels such as “entry-level,” “USA mentioned,” and “likely related” are screening hints based on available listing data.
 
-For a pasted job, the app can compare **manually entered required skills** with an editable skill list. Its percentage is a screening estimate, not proof of qualification. The resume tools identify phrase or keyword overlap; they do not verify experience, work authorization, or every requirement in the full listing.
+For a pasted job, the app can compare **manually entered required skills** with an editable skill list and shows a **1.0–10.0 fit score** (8.0+ is a strong match). That score is a screening estimate, not proof of qualification. The resume tools identify phrase or keyword overlap; they do not verify experience, work authorization, or every requirement in the full listing.
 
 **Applied** is a status the user selects after applying on the source site. It does not submit an application.
 

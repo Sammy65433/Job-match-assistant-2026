@@ -46,6 +46,7 @@ export default function App() {
   const [remoteError, setRemoteError] = useState("");
   const [remoteSearched, setRemoteSearched] = useState(false);
   const [remoteUpdatedAt, setRemoteUpdatedAt] = useState(null);
+  const [remoteRefreshHours, setRemoteRefreshHours] = useState(null);
 
   const [mode, setMode] = useState("remote");
   const [area, setArea] = useState("newark");
@@ -135,6 +136,7 @@ export default function App() {
     setRemoteError("");
     setRemoteSearched(false);
     setRemoteUpdatedAt(null);
+    setRemoteRefreshHours(null);
   } // end clearResults
 
   function changeTrack(nextTrack) {
@@ -178,6 +180,9 @@ export default function App() {
       setRemoteJobs(Array.isArray(data.jobs) ? data.jobs : []);
       setRemoteWarnings(Array.isArray(data.errors) ? data.errors : []);
       setRemoteUpdatedAt(data.updatedAt || null);
+      setRemoteRefreshHours(
+        typeof data.ttlHours === "number" ? data.ttlHours : null
+      );
     } catch (error) {
       setRemoteError(error.message);
     } finally {
@@ -365,6 +370,7 @@ export default function App() {
           error={remoteError}
           searched={remoteSearched}
           updatedAt={remoteUpdatedAt}
+          refreshHours={remoteRefreshHours}
           appliedListingIds={appliedListingIds}
           onSkillChange={(text) =>
             setSkillsByTrack((current) => ({

@@ -37,6 +37,11 @@ export const SOURCES = [
 
 export const HOUR_MS = 60 * 60 * 1000;
 
-export const CACHE_TTL_MS = 24 * HOUR_MS;
+function configuredRefreshHours() {
+  const hours = Number(process.env.JOB_REFRESH_HOURS);
+  return Number.isFinite(hours) && hours >= 1 && hours <= 168 ? hours : 12;
+} // end configuredRefreshHours
 
-export const CACHE_TTL_HOURS = CACHE_TTL_MS / HOUR_MS;
+export const CACHE_TTL_HOURS = configuredRefreshHours();
+
+export const CACHE_TTL_MS = CACHE_TTL_HOURS * HOUR_MS;
