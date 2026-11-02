@@ -8,7 +8,7 @@ I built this app to organize job searches across software engineering, data anal
 
 ## What it does
 
-- Searches remote software and data listings from Remotive, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, and RemoteJobs.org.
+- Searches remote software and data listings from Remotive, RemoteOK, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, and RemoteJobs.org.
 - Optionally adds USAJOBS, Reed, and Findwork when their API keys are configured.
 - Reads company boards from Greenhouse, Lever, Ashby, SmartRecruiters, and Workable.
 - Refreshes all discovery sources automatically every 12 hours by default (`JOB_REFRESH_HOURS`) and shows the last refresh time in the results.

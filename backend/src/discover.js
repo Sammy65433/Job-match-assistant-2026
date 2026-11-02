@@ -10,6 +10,7 @@ import { getJoobleJobs } from "./jooble.js";
 import { getArbeitnowJobs } from "./arbeitnow.js";
 import { getRemoShiftJobs } from "./remoshift.js";
 import { getRemoteJobsOrgJobs } from "./remotejobs.js";
+import { getRemoteOkJobs, selectRemoteOkJobs } from "./remotok.js";
 import { getUsaJobs } from "./usajobs.js";
 import { getReedJobs } from "./reed.js";
 import { getFindworkJobs } from "./findwork.js";
@@ -135,10 +136,14 @@ export async function discoverRemoteJobs(track) {
   const loaders = [
     { name: "Remotive", run: () => loadRemotive(track) },
     {
-      name: "Jobicy",
+      name: "RemoteOK",
       run: () =>
-        cached(`jobicy-${track}`, CACHE_TTL_MS, () => getJobicyJobs(track))
+        cached(`remotok-${track}`, CACHE_TTL_MS, async () => {
+          const jobs = await getRemoteOkJobs();
+          return selectRemoteOkJobs(jobs, track);
+        })
     },
+    { name: "Jobicy", run: () => cached(`jobicy-${track}`, CACHE_TTL_MS, () => getJobicyJobs(track)) },
     {
       name: "Himalayas",
       run: () => cached("himalayas", CACHE_TTL_MS, getHimalayasJobs)
@@ -149,9 +154,8 @@ export async function discoverRemoteJobs(track) {
         cached(`muse-${track}-remote`, CACHE_TTL_MS, () =>
           getMuseJobs({ track, location: "Flexible / Remote" })
         )
-        
     },
-        {
+    {
       name: "Jooble",
       run: () =>
         cached(`jooble-${track}-remote`, CACHE_TTL_MS, async () => {

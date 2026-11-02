@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { parseSkills } from "./tracks.js";
 
 export default function ResumeJobCheck({
@@ -10,11 +10,13 @@ export default function ResumeJobCheck({
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [lastInputs, setLastInputs] = useState({ resumeText, skillText });
 
-  useEffect(() => {
+  if (lastInputs.resumeText !== resumeText || lastInputs.skillText !== skillText) {
+    setLastInputs({ resumeText, skillText });
     setResult(null);
     setError("");
-  }, [resumeText, skillText]); // end useEffect
+  } // end reset result when resume or skill inputs change
 
   async function compare() {
     if (!resumeText.trim()) {

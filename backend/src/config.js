@@ -17,6 +17,7 @@ export const STATUSES = [
 
 export const SOURCES = [
   "Remotive",
+  "RemoteOK",
   "Jobicy",
   "Himalayas",
   "Adzuna",

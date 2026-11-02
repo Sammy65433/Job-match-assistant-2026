@@ -1,5 +1,6 @@
 const REMOTE_ONLY_SOURCES = new Set([
   "Remotive",
+  "RemoteOK",
   "Jobicy",
   "Himalayas",
   "Arbeitnow",

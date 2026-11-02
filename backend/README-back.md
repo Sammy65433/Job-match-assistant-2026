@@ -9,7 +9,7 @@ Express API and MongoDB data layer for account access, job discovery, saved list
 - Verifies email/password sign-in and Google ID tokens, then issues app session tokens.
 - Restricts saved jobs and resume-check routes to authenticated users.
 - Scopes MongoDB saved-job reads and status updates to the verified account.
-- Finds remote software/data listings through Remotive, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, RemoteJobs.org, and configured company-board adapters.
+- Finds remote software/data listings through Remotive, RemoteOK, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, RemoteJobs.org, and configured company-board adapters.
 - Optionally adds USAJOBS, Reed, and Findwork when their API keys are configured.
 - Provides Adzuna audio searches for Los Angeles and Newark/NYC.
 - Finds hybrid software/data listings for the Los Angeles and Newark/NYC areas.
@@ -48,7 +48,7 @@ Configure server-side variables privately:
 | `JOB_REFRESH_HOURS` | Hours between automatic refreshes, 1–168; defaults to `12` |
 | `DISABLE_JOB_REFRESH` | Set to `1` to turn off the background refresh (useful in tests) |
 
-No-key sources: Remotive, Jobicy, Himalayas, The Muse (key optional), Arbeitnow, RemoShift, RemoteJobs.org, and the Greenhouse/Lever/Ashby/SmartRecruiters/Workable public board endpoints.
+No-key sources: Remotive, RemoteOK, Jobicy, Himalayas, The Muse (key optional), Arbeitnow, RemoShift, RemoteJobs.org, and the Greenhouse/Lever/Ashby/SmartRecruiters/Workable public board endpoints.
 
 Never commit `.env` or put backend secrets in Vite variables. Rotate any previously exposed credentials before relying on the deployment.
 
