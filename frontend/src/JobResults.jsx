@@ -23,6 +23,7 @@ const LOCATION_LABELS = {
 const SOURCE_URLS = {
   Remotive: "https://remotive.com",
   RemoteOK: "https://remoteok.com",
+  "Hacker News": "https://news.ycombinator.com",
   Jobicy: "https://jobicy.com",
   Himalayas: "https://himalayas.app",
   "The Muse": "https://www.themuse.com",

@@ -11,6 +11,7 @@ import { getArbeitnowJobs } from "./arbeitnow.js";
 import { getRemoShiftJobs } from "./remoshift.js";
 import { getRemoteJobsOrgJobs } from "./remotejobs.js";
 import { getRemoteOkJobs, selectRemoteOkJobs } from "./remotok.js";
+import { getHackerNewsJobs, selectHackerNewsJobs } from "./hackernews.js";
 import { getUsaJobs } from "./usajobs.js";
 import { getReedJobs } from "./reed.js";
 import { getFindworkJobs } from "./findwork.js";
@@ -141,6 +142,14 @@ export async function discoverRemoteJobs(track) {
         cached(`remotok-${track}`, CACHE_TTL_MS, async () => {
           const jobs = await getRemoteOkJobs();
           return selectRemoteOkJobs(jobs, track);
+        })
+    },
+    {
+      name: "Hacker News",
+      run: () =>
+        cached(`hackernews-${track}`, CACHE_TTL_MS, async () => {
+          const jobs = await getHackerNewsJobs();
+          return selectHackerNewsJobs(jobs, track);
         })
     },
     { name: "Jobicy", run: () => cached(`jobicy-${track}`, CACHE_TTL_MS, () => getJobicyJobs(track)) },

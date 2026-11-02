@@ -21,6 +21,12 @@ export function stripHtml(value, maxLength = MAX_DESCRIPTION_LENGTH) {
       /&(nbsp|amp|lt|gt|quot|#39|apos);/gi,
       (entity) => ENTITIES[entity.toLowerCase()] ?? " "
     )
+    .replace(/&#x([0-9a-f]+);/gi, (_m, hex) =>
+      String.fromCodePoint(parseInt(hex, 16))
+    )
+    .replace(/&#(\d+);/gi, (_m, dec) =>
+      String.fromCodePoint(parseInt(dec, 10))
+    )
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, maxLength);

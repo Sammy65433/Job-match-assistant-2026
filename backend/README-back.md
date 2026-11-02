@@ -9,7 +9,7 @@ Express API and MongoDB data layer for account access, job discovery, saved list
 - Verifies email/password sign-in and Google ID tokens, then issues app session tokens.
 - Restricts saved jobs and resume-check routes to authenticated users.
 - Scopes MongoDB saved-job reads and status updates to the verified account.
-- Finds remote software/data listings through Remotive, RemoteOK, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, RemoteJobs.org, and configured company-board adapters.
+- Finds remote software/data listings through Remotive, RemoteOK, Hacker News, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, RemoteJobs.org, and configured company-board adapters.
 - Optionally adds USAJOBS, Reed, and Findwork when their API keys are configured.
 - Provides Adzuna audio searches for Los Angeles and Newark/NYC.
 - Finds hybrid software/data listings for the Los Angeles and Newark/NYC areas.

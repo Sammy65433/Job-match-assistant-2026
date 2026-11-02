@@ -18,6 +18,7 @@ export const STATUSES = [
 export const SOURCES = [
   "Remotive",
   "RemoteOK",
+  "Hacker News",
   "Jobicy",
   "Himalayas",
   "Adzuna",
