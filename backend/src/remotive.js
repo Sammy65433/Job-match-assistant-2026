@@ -73,16 +73,25 @@ export async function getRemotiveJobs() {
   return pendingFetch;
 }
 
+export async function getRemotiveAudioJobs(limit = 50) {
+  const allJobs = await getRemotiveJobs();
+
+  return selectRemotiveAudioJobs(allJobs, limit);
+} // end getRemotiveAudioJobs
+
 const SENIOR_TITLE =
   /\b(senior|sr\.?|staff|principal|lead|tech lead|head of|director|manager|architect)\b/i;
 
 const SOFTWARE_TITLE =
   /\b(software|frontend|front-end|backend|back-end|full.?stack|web developer|react|javascript|node\.?js)\b/i;
 
-const DATA_TITLE =
-  /\b(data analyst|business analyst|business intelligence|bi analyst|reporting analyst|analytics analyst|etl analyst)\b/i;
-
 const SOFTWARE_CATEGORY = /software/i;
+
+const DATA_TITLE =
+  /\b(data (engineer|engineering|scientist|analyst)|machine learning (engineer|scientist)|data scientist|data analyst|business intelligence|bi analyst|etl|analytics|insights|reporting)\b/i;
+
+const AUDIO_TITLE =
+  /\b(audio|sound|music|produc(?:er|tion)|mix(?:ing)?|record(?:ing)?|composer|dsp|voic(?:e|es)?|sound design)\b/i;
 
 export function selectRemotiveJobs(jobs, track, limit = 100) {
   if (track !== "software" && track !== "data") {
@@ -104,3 +113,12 @@ export function selectRemotiveJobs(jobs, track, limit = 100) {
     }) // end filter
     .slice(0, limit);
 } // end selectRemotiveJobs
+
+export function selectRemotiveAudioJobs(jobs, limit = 50) {
+  if (!Array.isArray(jobs)) return [];
+
+  return jobs
+    .filter((job) => !SENIOR_TITLE.test(job.title))
+    .filter((job) => AUDIO_TITLE.test(job.title))
+    .slice(0, limit);
+} // end selectRemotiveAudioJobs

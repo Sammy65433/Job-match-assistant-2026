@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { searchAdzunaAudioJobs } from "../adzuna.js";
+import { getRemotiveAudioJobs } from "../remotive.js";
 import { AREAS, AUDIO_MODES, DISCOVERY_TRACKS } from "../config.js";
 import { discoverRemoteJobs } from "../discover.js";
 import { discoverHybridJobs } from "../hybrid.js";
@@ -97,14 +98,44 @@ router.get("/audio", async (req, res) => {
   }
 
   try {
-    const found = await searchAdzunaAudioJobs(area, mode);
+    let found = [];
+
+    try {
+      found = await searchAdzunaAudioJobs(area, mode);
+    } catch (error) {
+      console.error("Adzuna audio discovery failed:", error.message);
+    }
+
+    const jobs = [...found];
+
+    if (mode === "remote") {
+      const remotiveAudio = await getRemotiveAudioJobs();
+
+      const knownUrls = new Set(jobs.map((job) => job.url).filter(Boolean));
+
+      for (const job of remotiveAudio) {
+        if (!job.url || knownUrls.has(job.url)) continue;
+        knownUrls.add(job.url);
+
+        jobs.push({
+          ...job,
+          workMode: "remote",
+          relevance: "review",
+          reason: "Remote audio production role from Remotive."
+        });
+      } // end for remotive audio merge
+    }
+
+    if (jobs.length === 0) {
+      throw new Error("No audio jobs found.");
+    }
 
     return res.json({
-      source: "Adzuna",
+      source: "Adzuna + Remotive",
       area,
       mode,
-      attribution: "Open each listing using its Adzuna redirect link.",
-      jobs: withScores(found, "audio", parseSkillsQuery(req.query.skills)),
+      attribution: "Open each listing using its source site link.",
+      jobs: withScores(jobs, "audio", parseSkillsQuery(req.query.skills)),
       updatedAt: refreshedAt(),
       ttlHours: refreshTtlHours()
     });

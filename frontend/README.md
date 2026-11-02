@@ -19,7 +19,7 @@ These tabs switch views in `App.jsx`; they are not separate browser URLs.
 
 ## Job discovery
 
-Software and data listings use the backend's remote search, including Remotive, Jobicy, Himalayas, and newer The Muse/company-board integrations. Audio uses the Adzuna Los Angeles/Newark search. A backend in-person software/data route has been added; do not claim an in-person frontend control works until it is connected and tested.
+Software and data listings use the backend's remote search, including Remotive, Jobicy, Himalayas, and newer The Muse/company-board integrations. Audio uses the Adzuna Los Angeles/Newark search, plus a Remotive source merged into the remote audio search. A backend in-person software/data route has been added; do not claim an in-person frontend control works until it is connected and tested.
 
 “Entry-level” and location labels are screening hints. A title without a level may still require years of experience. Search results are **not verified resume matches**.
 

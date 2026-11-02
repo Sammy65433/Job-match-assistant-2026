@@ -11,7 +11,7 @@ Express API and MongoDB data layer for account access, job discovery, saved list
 - Scopes MongoDB saved-job reads and status updates to the verified account.
 - Finds remote software/data listings through Remotive, RemoteOK, Hacker News, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, RemoteJobs.org, and configured company-board adapters.
 - Optionally adds USAJOBS, Reed, and Findwork when their API keys are configured.
-- Provides Adzuna audio searches for Los Angeles and Newark/NYC.
+- Provides Adzuna audio searches for Los Angeles and Newark/NYC, plus a Remotive remote audio source merged into the remote audio search.
 - Finds hybrid software/data listings for the Los Angeles and Newark/NYC areas.
 - Reads company job boards from Greenhouse, Lever, Ashby, SmartRecruiters, and Workable (`data/companyBoards.js`).
 - Refreshes every discovery source automatically every `JOB_REFRESH_HOURS` (default 12) and on startup. `/api/discover/status` reports the last and next refresh.
@@ -63,7 +63,7 @@ Never commit `.env` or put backend secrets in Vite variables. Rotate any previou
 | `GET /api/auth/me` | Retrieve authenticated user |
 | `GET /api/discover/remote?track=software` | Remote software/data search |
 | `GET /api/discover/hybrid?track=software&area=los_angeles` | Hybrid software/data search |
-| `GET /api/discover/audio?area=los_angeles` | Audio search; also accepts `newark` |
+| `GET /api/discover/audio?area=los_angeles&mode=remote` | Audio search; accepts `area` (los_angeles/newark) and `mode` (in-person/hybrid/remote); remote mode adds Remotive audio jobs |
 | `GET /api/discover/status` | Last/next automatic refresh and the configured cache TTL |
 | `GET /api/saved-jobs?track=software` | List this user's saved jobs |
 | `POST /api/saved-jobs/from-listing` | Save a discovered listing |

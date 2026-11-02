@@ -21,7 +21,7 @@ const SOFTWARE_TITLE =
   /\b(software (engineer|developer)|web developer|front[\s-]?end (engineer|developer)|back[\s-]?end (engineer|developer)|full[\s-]?stack (engineer|developer)|react developer|javascript developer|node(?:\.js)? developer)\b/i;
 
 const DATA_TITLE =
-  /\b(data analyst|business analyst|business intelligence analyst|bi analyst|reporting analyst|analytics analyst|data analytics analyst|etl analyst)\b/i;
+  /\b(data (engineer|engineering|scientist|analyst)|machine learning (engineer|scientist)|data scientist|data analyst|business intelligence|bi analyst|etl|analytics|insights|reporting)\b/i;
 
 export const SENIOR_TITLE =
   /\b(senior|sr\.?|staff|principal|lead|head|director|manager|architect|vp|vice president|chief)\b/i;
