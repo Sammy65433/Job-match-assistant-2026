@@ -18,7 +18,7 @@ const SEARCHES = {
 const STRONG_TITLE =
   /\b(audio (production )?engineer|recording engineer|sound engineer|mix(ing)? engineer|audio editor|podcast (producer|editor)|studio engineer|vocal producer)\b/i;
 
-const RELATED_TITLE =
+export const RELATED_TITLE =
   /\b(audio|sound|recording|music produc(er|tion)|broadcast|studio|post.production)\b/i;
 
 const STUDIO_CONTEXT =

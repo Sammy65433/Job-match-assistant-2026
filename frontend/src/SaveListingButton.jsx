@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function SaveListingButton({ job, track, onSave }) {
+export default function SaveListingButton({ job, track, onSave, onApply }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -27,12 +27,20 @@ export default function SaveListingButton({ job, track, onSave }) {
     setSaving(true);
     setError("");
 
+    let targetUrl = job.url;
+
     try {
+      const result = onApply ? await onApply(job, track) : null;
+
+      if (result?.url) {
+        targetUrl = result.url;
+      } // end if result url
+
       await onSave(job, track);
       setSaved(true);
 
       if (tab) {
-        tab.location.replace(job.url);
+        tab.location.replace(targetUrl);
       } else {
         // Popup blocked: let the user open the listing with its existing link.
         setError("Saved. Open the listing using the View job link above.");

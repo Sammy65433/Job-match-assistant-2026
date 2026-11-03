@@ -1,7 +1,7 @@
 import { invalidateCache } from "./cache.js";
 import { discoverRemoteJobs } from "./discover.js";
 import { discoverHybridJobs } from "./hybrid.js";
-import { searchAdzunaAudioJobs } from "./adzuna.js";
+import { discoverAudioJobs } from "./audio.js";
 import {
   AREAS,
   AUDIO_MODES,
@@ -39,7 +39,7 @@ function refreshTargets() {
     for (const mode of AUDIO_MODES) {
       targets.push({
         name: `audio:${area}:${mode}`,
-        run: () => searchAdzunaAudioJobs(area, mode)
+        run: () => discoverAudioJobs(area, mode)
       });
     } // end for modes
   } // end for areas

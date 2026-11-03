@@ -292,6 +292,22 @@ export default function App() {
     return data.savedJob;
   } // end saveListing
 
+  async function applyListing(job, _listingTrack) {
+    if (!job.url || !job.source || !job.id) {
+      throw new Error("This listing is missing a source link.");
+    } // end if missing
+
+    const result = await post("/api/apply", {
+      source: job.source,
+      sourceJobId: String(job.id).slice(0, 200),
+      url: job.url,
+      title: String(job.title || "").trim().slice(0, 150),
+      description: descriptionText(job.description || "").slice(0, 10000)
+    }); // end post
+
+    return result;
+  } // end applyListing
+
   async function updateStatus(jobId, status, details = {}) {
     setSavedJobsError("");
 
@@ -400,6 +416,7 @@ export default function App() {
           onAreaChange={changeArea}
           onSubmit={findRealJobs}
           onSave={saveListing}
+          onApply={applyListing}
         />
       )}
 

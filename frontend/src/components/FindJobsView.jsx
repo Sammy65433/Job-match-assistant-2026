@@ -18,7 +18,8 @@ export default function FindJobsView({
   onModeChange,
   onAreaChange,
   onSubmit,
-  onSave
+  onSave,
+  onApply
 }) {
   return (
     <>
@@ -46,6 +47,7 @@ export default function FindJobsView({
           updatedAt={updatedAt}
           refreshHours={refreshHours}
           onSave={onSave}
+          onApply={onApply}
           appliedListingIds={appliedListingIds}
         />
       </section>

@@ -7,6 +7,7 @@ import discoverRoutes from "./routes/discover.js";
 import matchRoutes from "./routes/matches.js";
 import resumeRoutes from "./routes/resume.js";
 import savedJobRoutes from "./routes/savedJobs.js";
+import applyRoutes from "./routes/apply.js";
 
 export function createApp() {
   const app = express();
@@ -50,6 +51,7 @@ export function createApp() {
   app.use("/api/auth", authLimiter, authRoutes);
   app.use("/api", matchRoutes);
   app.use("/api/saved-jobs", savedJobRoutes);
+  app.use("/api/apply", applyRoutes);
   app.use("/api/discover", discoverRoutes);
   app.use("/api/resume", resumeRoutes);
 

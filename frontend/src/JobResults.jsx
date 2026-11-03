@@ -97,7 +97,7 @@ function MatchLine({ job }) {
   );
 } // end MatchLine
 
-function JobCard({ job, track, onSave, appliedListingIds }) {
+function JobCard({ job, track, onSave, onApply, appliedListingIds }) {
   const isApplied = appliedListingIds?.has(`${job.source}:${job.id}`) ?? false;
 
   return (
@@ -143,7 +143,12 @@ function JobCard({ job, track, onSave, appliedListingIds }) {
         </a>
       </p>
 
-      <SaveListingButton job={job} track={track} onSave={onSave} />
+      <SaveListingButton
+        job={job}
+        track={track}
+        onSave={onSave}
+        onApply={onApply}
+      />
     </article>
   );
 }
@@ -159,6 +164,7 @@ export default function JobResults({
   updatedAt = null,
   refreshHours = null,
   onSave,
+  onApply,
   appliedListingIds = new Set()
 }) {
 
@@ -255,6 +261,7 @@ export default function JobResults({
   job={job}
   track={track}
   onSave={onSave}
+  onApply={onApply}
   appliedListingIds={appliedListingIds}
 />
 
