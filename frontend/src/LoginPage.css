@@ -160,3 +160,6 @@
   font-weight: 700;
   cursor: pointer;
 }
+.login-intro .app-logo {
+  margin-bottom: 1rem;
+}
