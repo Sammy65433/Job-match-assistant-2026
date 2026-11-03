@@ -1,5 +1,6 @@
 import { BriefcaseBusiness, ChartNoAxesCombined, Headphones } from "lucide-react";
 import JobAuth from "./JobAuth.jsx";
+import Logo from "./components/Logo.jsx";
 import "./LoginPage.css";
 
 export default function LoginPage({ request, onAuthenticated, notice }) {
@@ -7,6 +8,8 @@ export default function LoginPage({ request, onAuthenticated, notice }) {
     <main className="login-page">
       <div className="login-layout">
         <section className="login-intro" aria-label="App introduction">
+          <Logo />
+
           <span className="login-eyebrow">
             <BriefcaseBusiness size={16} aria-hidden="true" />
             YOUR NEXT OPPORTUNITY
@@ -25,7 +28,7 @@ export default function LoginPage({ request, onAuthenticated, notice }) {
           </div>
         </section>
 
-                <div className="login-card">
+        <div className="login-card">
           {notice && <p role="status">{notice}</p>}
           <JobAuth request={request} onAuthenticated={onAuthenticated} />
         </div>

@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { BriefcaseBusiness } from "lucide-react";
+import Logo from "./components/Logo.jsx";
 
 import "./App.css";
 import { TRACKS, parseSkills } from "./tracks.js";
@@ -364,9 +365,9 @@ export default function App() {
   return (
     <main className="page">
       <h1 className="app-title">
-        <BriefcaseBusiness size={42} aria-hidden="true" />
-        Job Match Assistant
-      </h1>
+  <Logo />
+  <span className="visually-hidden">Job Match Assistant</span>
+</h1>
       <p>
         Find real listings, review requirements, and track jobs you save.
         Discovery results are not verified resume matches.
