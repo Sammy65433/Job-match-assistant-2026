@@ -8,7 +8,7 @@ export default function LoginPage({ request, onAuthenticated, notice }) {
     <main className="login-page">
       <div className="login-layout">
         <section className="login-intro" aria-label="App introduction">
-          <Logo />
+          <Logo width={480} height={180} />
 
           <span className="login-eyebrow">
             <BriefcaseBusiness size={16} aria-hidden="true" />

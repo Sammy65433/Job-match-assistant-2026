@@ -1,8 +1,13 @@
 import { SVG3D } from "3dsvg";
 
-export default function Logo() {
+export default function Logo({ width = 260, height = 90 }) {
   return (
-    <div className="app-logo" style={{ width: 260, height: 90 }}>
+    <div
+      className="app-logo"
+      role="img"
+      aria-label="Job Match"
+      style={{ width, height, maxWidth: "100%" }}
+    >
       <SVG3D
         text="JOB MATCH"
         font="Oswald"
