@@ -43,6 +43,8 @@ Configure server-side variables privately:
 | `REED_API_KEY` | Optional; enables the UK-focused Reed source |
 | `FINDWORK_API_KEY` | Optional; enables the Findwork source |
 | `FRONTEND_ORIGIN` | Exact allowed frontend origin for CORS |
+| `TRUST_PROXY` | Optional; set to `1` behind a proxy. Enabled automatically when `NODE_ENV=production` or on Render (`RENDER=true`), which fixes express-rate-limit `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` errors |
+| `GREENHOUSE_BOARD_TOKEN` | Optional; enables best-effort Greenhouse submission in `POST /api/apply`. Without it, apply falls back to opening the listing URL |
 | `PORT` | Optional locally; supplied by Render |
 | `MUSE_API_KEY` | Optional, only if configured for The Muse adapter |
 | `JOB_REFRESH_HOURS` | Hours between automatic refreshes, 1–168; defaults to `12` |
@@ -65,6 +67,7 @@ Never commit `.env` or put backend secrets in Vite variables. Rotate any previou
 | `GET /api/discover/hybrid?track=software&area=los_angeles` | Hybrid software/data search |
 | `GET /api/discover/audio?area=los_angeles&mode=remote` | Audio search; accepts `area` (los_angeles/newark) and `mode` (in-person/hybrid/remote); remote mode adds Remotive audio jobs |
 | `GET /api/discover/status` | Last/next automatic refresh and the configured cache TTL |
+| `POST /api/apply` | Authenticated. Body: `{ source, sourceJobId, url, title, description }`. Best-effort source-aware submission (Greenhouse when `GREENHOUSE_BOARD_TOKEN` is set), otherwise returns the listing URL so the client can open it |
 | `GET /api/saved-jobs?track=software` | List this user's saved jobs |
 | `POST /api/saved-jobs/from-listing` | Save a discovered listing |
 | `POST /api/saved-jobs` | Save a manually pasted job |

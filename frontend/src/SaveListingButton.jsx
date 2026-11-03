@@ -30,14 +30,21 @@ export default function SaveListingButton({ job, track, onSave, onApply }) {
     let targetUrl = job.url;
 
     try {
-      const result = onApply ? await onApply(job, track) : null;
-
-      if (result?.url) {
-        targetUrl = result.url;
-      } // end if result url
-
       await onSave(job, track);
       setSaved(true);
+
+      if (onApply) {
+        try {
+          const result = await onApply(job, track);
+
+          if (result?.url) {
+            targetUrl = result.url;
+          } // end if result url
+        } catch {
+          // Best effort: if the apply endpoint is unavailable, still open the
+          // listing on its source site.
+        } // end try/catch apply
+      } // end if onApply
 
       if (tab) {
         tab.location.replace(targetUrl);

@@ -12,7 +12,15 @@ import applyRoutes from "./routes/apply.js";
 export function createApp() {
   const app = express();
 
-  if (process.env.TRUST_PROXY === "1") {
+  // Render and most hosts sit behind one proxy/load balancer, which sets
+  // X-Forwarded-For. express-rate-limit needs trust proxy enabled to read the
+  // real client IP instead of throwing ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
+  const behindProxy =
+    process.env.TRUST_PROXY === "1" ||
+    process.env.RENDER === "true" ||
+    process.env.NODE_ENV === "production";
+
+  if (behindProxy) {
     app.set("trust proxy", 1);
   } // end if behind one proxy
 

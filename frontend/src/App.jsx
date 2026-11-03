@@ -105,6 +105,7 @@ export default function App() {
   async function request(path, options = {}) {
     const isPrivate =
       path.startsWith("/api/saved-jobs") ||
+      path.startsWith("/api/apply") ||
       path.startsWith("/api/resume/") ||
       path === "/api/matches/custom";
 
