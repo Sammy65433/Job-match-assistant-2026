@@ -70,6 +70,11 @@ audio: {
   modes: ["remote", "hybrid", "in-person"],
   defaultSkills: "Pro Tools, Logic Pro, Ableton Live, audio recording, vocal tracking, audio editing, vocal production, microphone placement, signal flow, studio sessions, session file organization",
 },
+ai: {
+  label: "AI solutions developer",
+  modes: ["remote", "hybrid"],
+  defaultSkills: "Python, generative AI, LLMs, large language models, prompt engineering, AI application development, REST APIs, JSON, Git, GitHub, uv, pytest, debugging, responsible AI, OpenAI API, Hugging Face, pandas, Streamlit",
+},
 
 
 };

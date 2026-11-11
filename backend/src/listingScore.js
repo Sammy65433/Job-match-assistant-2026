@@ -21,6 +21,17 @@ const VOCAB = {
     "audio recording", "vocal tracking", "vocal production", "mixing",
     "mastering", "sound design", "live sound", "signal flow",
     "microphone placement", "studio sessions", "podcast production"
+  ],
+  ai: [
+    "python", "generative ai", "large language models", "llm", "llms",
+    "prompt engineering", "openai", "hugging face", "api", "apis",
+    "rest apis", "git", "github", "uv", "pytest", "unit testing",
+    "debugging", "machine learning", "deep learning", "nlp",
+    "computer vision", "embeddings", "vector databases", "langchain",
+    "llamaindex", "streamlit", "fastapi", "flask", "django", "json",
+    "responsible ai", "model evaluation", "fine-tuning", "transformers",
+    "pytorch", "tensorflow", "scikit-learn", "pandas", "numpy",
+    "jupyter", "docker", "aws", "azure", "gcp", "sql", "rag"
   ]
 }; // end VOCAB
 

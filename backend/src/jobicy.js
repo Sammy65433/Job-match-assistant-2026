@@ -9,7 +9,8 @@ function htmlToText(html) {
 } // end htmlToText
 
 export async function getJobicyJobs(track) {
-  const tag = track === "data" ? "sql" : "javascript";
+  const tags = { software: "javascript", data: "sql", ai: "python" };
+  const tag = tags[track] ?? "javascript";
   const url = `https://jobicy.com/api/v2/remote-jobs?count=50&tag=${tag}`;
 
   const response = await fetch(url);

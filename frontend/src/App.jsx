@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import { BriefcaseBusiness } from "lucide-react";
 import Logo from "./components/Logo.jsx";
 
 import "./App.css";
@@ -22,12 +21,13 @@ function defaultSkillsByTrack() {
   return {
     software: TRACKS.software.defaultSkills,
     data: TRACKS.data.defaultSkills,
-    audio: TRACKS.audio.defaultSkills
+    audio: TRACKS.audio.defaultSkills,
+    ai: TRACKS.ai.defaultSkills
   };
 } // end defaultSkillsByTrack
 
 function emptyResumeTextByTrack() {
-  return { software: "", data: "", audio: "" };
+  return { software: "", data: "", audio: "", ai: "" };
 } // end emptyResumeTextByTrack
 
 export default function App() {

@@ -3,7 +3,8 @@ const JOOBLE_URL = "https://jooble.org/api";
 const KEYWORDS = {
   software: "software developer",
   data: "data analyst",
-  audio: "audio engineer"
+  audio: "audio engineer",
+  ai: "machine learning engineer"
 }; // end KEYWORDS
 
 function stripHtml(value) {

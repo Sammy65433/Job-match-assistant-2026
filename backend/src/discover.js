@@ -23,6 +23,9 @@ const SOFTWARE_TITLE =
 const DATA_TITLE =
   /\b(data (engineer|engineering|scientist|analyst)|machine learning (engineer|scientist)|data scientist|data analyst|business intelligence|bi analyst|etl|analytics|insights|reporting)\b/i;
 
+const AI_TITLE =
+  /\b(ai|artificial intelligence|generative ai|gen ?ai|genai|machine learning|ml|deep learning|neural networks?|llms?|large language models?|prompt engineer(ing)?|conversational ai|computer vision|nlp|natural language processing|mlops|rag|retrieval[\s-]augmented generation|ai (engineer|developer|solutions? developer|solutions? engineer|application developer|analyst|specialist|consultant|architect|integrator|product manager|researcher|trainer)|machine learning (engineer|developer|scientist)|ml engineer|applied scientist|research scientist|ai\/ml|ml\/ai|hugging face|openai)\b/i;
+
 export const SENIOR_TITLE =
   /\b(senior|sr\.?|staff|principal|lead|head|director|manager|architect|vp|vice president|chief)\b/i;
 
@@ -32,6 +35,7 @@ export const ENTRY_TITLE =
 export function titleMatchesTrack(title, track) {
   if (track === "software") return SOFTWARE_TITLE.test(title);
   if (track === "data") return DATA_TITLE.test(title);
+  if (track === "ai") return AI_TITLE.test(title);
   return false;
 } // end titleMatchesTrack
 
@@ -130,8 +134,8 @@ async function loadRemoteBoards() {
 } // end loadRemoteBoards
 
 export async function discoverRemoteJobs(track) {
-  if (track !== "software" && track !== "data") {
-    throw new Error("Choose the software or data track.");
+  if (track !== "software" && track !== "data" && track !== "ai") {
+    throw new Error("Choose the software, data, or AI track.");
   } // end if invalid track
 
   const loaders = [

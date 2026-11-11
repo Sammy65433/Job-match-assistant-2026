@@ -11,7 +11,9 @@ const STARTER_TEXT = {
   data:
     "Built Python and SQL ETL pipelines, analyzed survey and staffing datasets, designed a SQLite star schema, and created reports and dashboards using Excel, Tableau, and Power BI.",
   audio:
-    "Recorded and edited vocal sessions, set up microphones and signal flow, organized studio sessions, and contributed to vocal production. Used Pro Tools, Logic Pro, and Ableton Live."
+    "Recorded and edited vocal sessions, set up microphones and signal flow, organized studio sessions, and contributed to vocal production. Used Pro Tools, Logic Pro, and Ableton Live.",
+  ai:
+    "Built Python applications that call large language model APIs, designed prompts, validated and parsed JSON responses, and handled errors and debugging. Used Git, GitHub, uv, and pytest to organize and test AI projects."
 };
 
 export default function ResumeComparison({

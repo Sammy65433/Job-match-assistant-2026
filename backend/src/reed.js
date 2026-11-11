@@ -4,7 +4,8 @@ const REED_URL = "https://www.reed.co.uk/api/1.0/search";
 
 const KEYWORDS = {
   software: "software engineer",
-  data: "data analyst"
+  data: "data analyst",
+  ai: "artificial intelligence"
 };
 
 export async function getReedJobs({ track, remote = true }) {

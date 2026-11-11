@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, ChartNoAxesCombined, Headphones } from "lucide-react";
+import { BriefcaseBusiness, BrainCircuit, ChartNoAxesCombined, Headphones } from "lucide-react";
 import JobAuth from "./JobAuth.jsx";
 import Logo from "./components/Logo.jsx";
 import "./LoginPage.css";
@@ -17,7 +17,7 @@ export default function LoginPage({ request, onAuthenticated, notice }) {
 
           <h1>Find Work That Fits Your Skills.</h1>
           <p>
-            Explore software, data, and audio jobs. Save opportunities
+            Explore software, data, audio, and AI jobs. Save opportunities
             and track applications you submit.
           </p>
 
@@ -25,6 +25,7 @@ export default function LoginPage({ request, onAuthenticated, notice }) {
             <span><BriefcaseBusiness size={17} aria-hidden="true" /> Software Engineering</span>
             <span><ChartNoAxesCombined size={17} aria-hidden="true" /> Data Analytics</span>
             <span><Headphones size={17} aria-hidden="true" /> Audio Production</span>
+            <span><BrainCircuit size={17} aria-hidden="true" /> AI Solutions</span>
           </div>
         </section>
 

@@ -4,7 +4,8 @@ const FINDWORK_URL = "https://findwork.dev/api/jobs/";
 
 const KEYWORDS = {
   software: "software engineer",
-  data: "data analyst"
+  data: "data analyst",
+  ai: "machine learning engineer"
 };
 
 export async function getFindworkJobs({ track, remote = true }) {

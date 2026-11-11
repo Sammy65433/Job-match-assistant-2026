@@ -30,7 +30,8 @@ const AREAS = {
 
 const ADZUNA_QUERY = {
   software: "software developer",
-  data: "data analyst"
+  data: "data analyst",
+  ai: "machine learning engineer"
 }; // end ADZUNA_QUERY
 
 function inArea(location, area) {
@@ -56,8 +57,8 @@ function classifyJob(job, track) {
 } // end classifyJob
 
 export async function discoverHybridJobs(track, area) {
-  if ((track !== "software" && track !== "data") || !AREAS[area]) {
-    throw new Error("Choose software or data, and a valid area.");
+  if ((track !== "software" && track !== "data" && track !== "ai") || !AREAS[area]) {
+    throw new Error("Choose software, data, or AI, and a valid area.");
   } // end if invalid
 
   const loaders = [

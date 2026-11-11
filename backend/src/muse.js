@@ -5,7 +5,8 @@ const MAX_PAGES = 3;
 // Category names must match The Muse exactly. Confirm them in their API docs.
 const CATEGORIES = {
   software: ["Software Engineering"],
-  data: ["Data and Analytics", "Data Science"]
+  data: ["Data and Analytics", "Data Science"],
+  ai: ["Data Science", "Software Engineering"]
 }; // end CATEGORIES
 
 const LEVELS = ["Entry Level"];

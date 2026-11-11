@@ -22,7 +22,7 @@ const savedJobSchema = new mongoose.Schema(
     },
     track: {
       type: String,
-      enum: ["software", "data", "audio"],
+      enum: ["software", "data", "audio", "ai"],
       required: true
     },
     title: { type: String, required: true, trim: true, maxlength: 150 },

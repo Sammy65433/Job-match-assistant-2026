@@ -63,8 +63,8 @@ Never commit `.env` or put backend secrets in Vite variables. Rotate any previou
 | `POST /api/auth/login` | Email/password sign-in |
 | `POST /api/auth/google` | Verify Google ID token and sign in |
 | `GET /api/auth/me` | Retrieve authenticated user |
-| `GET /api/discover/remote?track=software` | Remote software/data search |
-| `GET /api/discover/hybrid?track=software&area=los_angeles` | Hybrid software/data search |
+| `GET /api/discover/remote?track=software` | Remote software/data/AI search |
+| `GET /api/discover/hybrid?track=software&area=los_angeles` | Hybrid software/data/AI search |
 | `GET /api/discover/audio?area=los_angeles&mode=remote` | Audio search; accepts `area` (los_angeles/newark) and `mode` (in-person/hybrid/remote); remote mode adds Remotive audio jobs |
 | `GET /api/discover/status` | Last/next automatic refresh and the configured cache TTL |
 | `POST /api/apply` | Authenticated. Body: `{ source, sourceJobId, url, title, description }`. Best-effort source-aware submission (Greenhouse when `GREENHOUSE_BOARD_TOKEN` is set), otherwise returns the listing URL so the client can open it |

@@ -2,18 +2,18 @@
 
 A full-stack job discovery and application tracker built with **React/Vite, Express, and MongoDB**.
 
-I built this app to organize job searches across software engineering, data analytics, and audio production. It brings listings into one interface, lets users save opportunities, and tracks applications they submit on the employer’s site.
+I built this app to organize job searches across software engineering, data analytics, audio production, and AI solutions development. It brings listings into one interface, lets users save opportunities, and tracks applications they submit on the employer’s site.
 
 **Live app:** https://job-match-assistant-4frc.onrender.com
 
 ## What it does
 
-- Searches remote software and data listings from Remotive, RemoteOK, Hacker News, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, and RemoteJobs.org.
+- Searches remote software, data, and AI listings from Remotive, RemoteOK, Hacker News, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, and RemoteJobs.org.
 - Optionally adds USAJOBS, Reed, and Findwork when their API keys are configured.
 - Reads company boards from Greenhouse, Lever, Ashby, SmartRecruiters, and Workable.
 - Refreshes all discovery sources automatically every 12 hours by default (`JOB_REFRESH_HOURS`) and shows the last refresh time in the results.
 - Searches audio-related listings near Los Angeles and Newark/NYC through Adzuna.
-- Includes backend work toward location-based software/data searches and company job-board sources. These integrations should be verified before presenting them as complete.
+- Includes backend work toward location-based software/data/AI searches and company job-board sources. These integrations should be verified before presenting them as complete.
 - Screens listings by title, apparent career level, and location text.
 - Lets users save source-linked listings or paste jobs found elsewhere.
 - Stores saved jobs, application statuses, applied dates, and interview times in MongoDB, scoped to each signed-in account.

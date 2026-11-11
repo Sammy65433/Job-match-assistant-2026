@@ -78,8 +78,12 @@ const SOFTWARE_TITLE =
 const DATA_TITLE =
   /\b(data|analyst|analytics|etl|scientist|machine learning|insights|reporting)\b/i;
 
+const AI_TITLE =
+  /\b(ai|artificial intelligence|generative ai|gen ?ai|genai|machine learning|ml|deep learning|neural networks?|llms?|large language models?|prompt engineer(ing)?|conversational ai|computer vision|nlp|natural language processing|mlops|rag|retrieval[\s-]augmented generation|applied scientist|research scientist)\b/i;
+
 export function selectRemoteOkJobs(jobs, track, limit = 100) {
-  const titlePattern = track === "data" ? DATA_TITLE : SOFTWARE_TITLE;
+  const titlePattern =
+    track === "data" ? DATA_TITLE : track === "ai" ? AI_TITLE : SOFTWARE_TITLE;
 
   return jobs
     .filter((job) => !SENIOR_TITLE.test(job.title))

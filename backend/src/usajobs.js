@@ -4,7 +4,8 @@ const USAJOBS_URL = "https://data.usajobs.gov/api/search";
 
 const KEYWORDS = {
   software: "software engineer",
-  data: "data analyst"
+  data: "data analyst",
+  ai: "artificial intelligence"
 };
 
 function locationText(locations) {
