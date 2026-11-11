@@ -1,5 +1,6 @@
 import { CACHE_TTL_MS } from "./config.js";
-import { asHttpsUrl, stripHtml } from "./text.js";
+import { asHttpsUrl, repairText, stripHtml } from "./text.js";
+import { isAiTitle } from "./titles.js";
 
 const HIRING_SEARCH_URL = "https://hn.algolia.com/api/v1/search_by_date";
 const COMMENT_SEARCH_URL = "https://hn.algolia.com/api/v1/search";
@@ -62,11 +63,11 @@ function toJob(comment, thread) {
 
   return {
     id: `hackernews-${comment.objectID}`,
-    title: cleanText(role) || "Open role",
-    company,
-    location,
+    title: repairText(role) || "Open role",
+    company: repairText(company),
+    location: repairText(location),
     url,
-    description,
+    description: repairText(description),
     source: "Hacker News",
     postedAt: Number.isFinite(Number(comment.created_at_i))
       ? new Date(Number(comment.created_at_i) * 1000).toISOString()
@@ -114,7 +115,7 @@ async function fetchThreadComments(storyId) {
 } // end fetchThreadComments
 
 export async function getHackerNewsJobs() {
-  if (cachedJobs && Date.now() - cachedAt < CACHE_MS) {
+  if (cachedJobs && Date.now() - cachedAt < CACHE_TTL_MS) {
     return cachedJobs;
   } // end if fresh
 
@@ -162,15 +163,14 @@ const SOFTWARE_TITLE =
 const DATA_TITLE =
   /\b(data|analyst|analytics|etl|scientist|machine learning|insights|reporting)\b/i;
 
-const AI_TITLE =
-  /\b(ai|artificial intelligence|generative ai|gen ?ai|genai|machine learning|ml|deep learning|neural networks?|llms?|large language models?|prompt engineer(ing)?|conversational ai|computer vision|nlp|natural language processing|mlops|rag|retrieval[\s-]augmented generation|applied scientist|research scientist)\b/i;
-
 export function selectHackerNewsJobs(jobs, track, limit = 100) {
   const titlePattern =
-    track === "data" ? DATA_TITLE : track === "ai" ? AI_TITLE : SOFTWARE_TITLE;
+    track === "data" ? DATA_TITLE : track === "ai" ? null : SOFTWARE_TITLE;
 
   return jobs
     .filter((job) => !SENIOR_TITLE.test(job.title))
-    .filter((job) => titlePattern.test(job.title))
+    .filter((job) =>
+      track === "ai" ? isAiTitle(job.title) : titlePattern.test(job.title)
+    )
     .slice(0, limit);
 }

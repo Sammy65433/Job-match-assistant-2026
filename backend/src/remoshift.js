@@ -20,6 +20,10 @@ export async function getRemoShiftJobs(track) {
     signal: AbortSignal.timeout(15000)
   });
 
+  // The public RemoShift endpoint blocks some hosts with 401/403. Skip it
+  // quietly so the rest of the discovery results still load.
+  if (response.status === 401 || response.status === 403) return [];
+
   if (!response.ok) {
     throw new Error(`RemoShift returned ${response.status}`);
   } // end if not ok

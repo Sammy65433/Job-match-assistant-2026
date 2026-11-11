@@ -1,40 +1,10 @@
+import { buildSkillGroups, cleanSkill, containsPhrase } from "./skills.js";
+
 const MAX_RESUME_LENGTH = 20000;
 const MAX_JOB_LENGTH = 15000;
 const MAX_KEYWORDS = 100;
+const SCORED_TRACKS = new Set(["software", "data", "audio", "ai"]);
 
-const TRACK_KEYWORDS = {
-  software: [
-    "javascript", "typescript", "react", "node.js", "express",
-    "mongodb", "mongoose", "sql", "postgresql", "python",
-    "java", "html", "css", "git", "rest apis", "graphql",
-    "docker", "aws", "next.js", "vue", "angular", "c#",
-    ".net", "php", "tailwind", "redux"
-  ],
-  data: [
-    "sql", "python", "excel", "tableau", "power bi", "etl",
-    "data analysis", "data visualization", "data modeling",
-    "looker", "snowflake", "dbt", "statistics", "sqlite",
-    "pandas", "bigquery"
-  ],
-  audio: [
-    "pro tools", "logic pro", "ableton live", "audio editing",
-    "audio recording", "vocal tracking", "vocal production",
-    "mixing", "mastering", "sound design", "live sound",
-    "signal flow", "microphone placement", "studio sessions",
-    "podcast production"
-  ],
-  ai: [
-    "python", "generative ai", "large language models", "llm", "llms",
-    "prompt engineering", "openai", "hugging face", "api", "apis",
-    "rest apis", "git", "github", "uv", "pytest", "unit testing",
-    "debugging", "machine learning", "deep learning", "nlp",
-    "computer vision", "embeddings", "vector databases", "langchain",
-    "llamaindex", "streamlit", "fastapi", "flask", "django", "json",
-    "responsible ai", "model evaluation", "fine-tuning", "transformers",
-    "pytorch", "tensorflow", "scikit-learn", "pandas", "numpy",
-    "jupyter", "docker", "aws", "azure", "gcp", "sql", "rag"
-  ]
-};
 export function compareFullJobDescription(body) {
   const { resumeText, jobDescription, track } = body ?? {};
 
@@ -45,18 +15,32 @@ export function compareFullJobDescription(body) {
     typeof jobDescription !== "string" ||
     !jobDescription.trim() ||
     jobDescription.length > MAX_JOB_LENGTH ||
-    !Object.hasOwn(TRACK_KEYWORDS, track)
+    !SCORED_TRACKS.has(track)
   ) {
     return { error: "Provide resume text, a job description, and a valid track." };
   }
 
-  const resume = clean(resumeText);
-  const listing = clean(jobDescription);
-  const detected = TRACK_KEYWORDS[track].filter((word) =>
-    containsPhrase(listing, word)
+  const resume = cleanSkill(resumeText);
+  const listing = cleanSkill(jobDescription);
+  const { groups } = buildSkillGroups(track);
+
+  const resumeDetected = new Set(
+    groups
+      .filter((group) =>
+        group.patterns.some((pattern) => containsPhrase(resume, pattern))
+      )
+      .map((group) => group.key)
   );
-  const matched = detected.filter((word) => containsPhrase(resume, word));
-  const notFound = detected.filter((word) => !containsPhrase(resume, word));
+
+  const detected = groups.filter((group) =>
+    group.patterns.some((pattern) => containsPhrase(listing, pattern))
+  );
+  const matched = detected
+    .filter((group) => resumeDetected.has(group.key))
+    .map((group) => group.key);
+  const notFound = detected
+    .filter((group) => !resumeDetected.has(group.key))
+    .map((group) => group.key);
 
   return {
     percentage: detected.length
@@ -68,23 +52,6 @@ export function compareFullJobDescription(body) {
     note:
       "Keyword overlap only. This does not verify experience, eligibility, or whether you should apply."
   };
-}
-
-
-function clean(value) {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function containsPhrase(text, phrase) {
-  const pattern = new RegExp(
-    `(?<![a-z0-9])${escapeRegex(phrase)}(?![a-z0-9])`,
-    "i"
-  );
-  return pattern.test(text);
 }
 
 export function keywordOverlap(body) {
@@ -114,9 +81,9 @@ export function keywordOverlap(body) {
     };
   }
 
-  const resume = clean(resumeText);
-  const listing = clean(`${jobTitle} ${jobDescription}`);
-  const unique = [...new Set(keywords.map(clean))];
+  const resume = cleanSkill(resumeText);
+  const listing = cleanSkill(`${jobTitle} ${jobDescription}`);
+  const unique = [...new Set(keywords.map(cleanSkill).filter(Boolean))];
 
   const mentioned = unique.filter((word) => containsPhrase(listing, word));
   const overlap = mentioned.filter((word) => containsPhrase(resume, word));

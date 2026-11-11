@@ -32,6 +32,40 @@ export function stripHtml(value, maxLength = MAX_DESCRIPTION_LENGTH) {
     .slice(0, maxLength);
 } // end stripHtml
 
+const MOJIBAKE = [
+  ["â€“", "–"],
+  ["â€”", "—"],
+  ["â€œ", "“"],
+  ["â€\u009d", "”"],
+  ["â€˜", "‘"],
+  ["â€™", "’"],
+  ["â€¦", "…"],
+  ["â€¢", "•"],
+  ["Â ", " "]
+];
+
+// Some sources send UTF-8 text that was already decoded as Windows-1252.
+// Repair the common cases so titles and locations stay readable.
+export function repairText(value) {
+  if (typeof value !== "string" || !value) return "";
+
+  let text = value;
+
+  for (const [broken, fixed] of MOJIBAKE) {
+    if (text.includes(broken)) text = text.split(broken).join(fixed);
+  } // end for known artifacts
+
+  if (/[ÃÂâ]/.test(text)) {
+    const decoded = Buffer.from(text, "latin1").toString("utf8");
+
+    if (!decoded.includes("\uFFFD") && decoded !== text) {
+      text = decoded;
+    } // end if valid decode
+  } // end if possible mojibake
+
+  return text.trim();
+} // end repairText
+
 export function asHttpsUrl(value) {
   if (typeof value !== "string" || !/^https:\/\//i.test(value)) return null;
 

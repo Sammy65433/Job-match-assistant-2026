@@ -9,10 +9,11 @@ Express API and MongoDB data layer for account access, job discovery, saved list
 - Verifies email/password sign-in and Google ID tokens, then issues app session tokens.
 - Restricts saved jobs and resume-check routes to authenticated users.
 - Scopes MongoDB saved-job reads and status updates to the verified account.
-- Finds remote software/data listings through Remotive, RemoteOK, Hacker News, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, RemoteJobs.org, and configured company-board adapters.
+- Finds remote software/data/AI listings through Remotive, RemoteOK, Hacker News, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, RemoteJobs.org, and configured company-board adapters.
+- Screens the AI track for technical AI/ML/LLM/prompt/NLP/vision roles and drops sales, training, annotation, and other non-engineering titles.
 - Optionally adds USAJOBS, Reed, and Findwork when their API keys are configured.
 - Provides Adzuna audio searches for Los Angeles and Newark/NYC, plus a Remotive remote audio source merged into the remote audio search.
-- Finds hybrid software/data listings for the Los Angeles and Newark/NYC areas.
+- Finds hybrid software/data/AI listings for the Los Angeles and Newark/NYC areas.
 - Reads company job boards from Greenhouse, Lever, Ashby, SmartRecruiters, and Workable (`data/companyBoards.js`).
 - Refreshes every discovery source automatically every `JOB_REFRESH_HOURS` (default 12) and on startup. `/api/discover/status` reports the last and next refresh.
 - Supports pasted-job skill previews and limited resume keyword checks.
@@ -89,10 +90,13 @@ score = max(1, round(matched entered skills / total entered required skills × 1
 
 Scores run from 1.0 to 10.0 with one decimal (for example, 9.5). A score of 8.0 or higher is a strong screening signal, but **not proof of qualification**. Keyword overlap is likewise not a verified match. Titles, source descriptions, seniority labels, location eligibility, education, and work authorization need review on the original listing.
 
+Related spellings count as one skill: `LLM`, `LLMs`, and `large language models` share a group, as do `API`, `APIs`, and `REST APIs`. This prevents the same requirement from lowering or inflating a score more than once.
+
 ## Source and operational notes
 
 - Link to each listing's original source. Keep required source attribution visible.
 - Some descriptions are missing, truncated, or HTML-formatted. Do not execute source HTML in the browser.
+- The Muse and RemoShift return `401`/`403` to some hosts. Those responses are treated as "no listings" so they do not produce a user-facing source warning; other sources still load.
 - Source caches are in memory, use a TTL of `JOB_REFRESH_HOURS` (default 12), and reset on restart.
 - A background scheduler warms every source on startup and then every `JOB_REFRESH_HOURS`. On hosts that sleep idle instances (for example, free tiers), the refresh runs the next time the instance wakes; use an external cron job if true wall-clock scheduling is required.
 - `SavedJob` uses a per-owner unique index for discovered listings. Older ownerless saved jobs require deliberate migration.

@@ -1,4 +1,6 @@
 import { CACHE_TTL_MS } from "./config.js";
+import { repairText } from "./text.js";
+import { isAiTitle } from "./titles.js";
 
 const REMOTIVE_URL = "https://remotive.com/api/remote-jobs";
 const CACHE_MS = CACHE_TTL_MS;
@@ -44,10 +46,10 @@ async function fetchJobs() {
     .filter((job) => validRemotiveUrl(job.url))
     .map((job) => ({
       id: String(job.id),
-      title: cleanText(job.title),
-      company: cleanText(job.company_name),
+      title: repairText(job.title),
+      company: repairText(job.company_name),
       category: cleanText(job.category),
-      location: cleanText(job.candidate_required_location),
+      location: repairText(job.candidate_required_location),
       url: job.url,
       source: "Remotive"
     }));
@@ -90,9 +92,6 @@ const SOFTWARE_CATEGORY = /software/i;
 const DATA_TITLE =
   /\b(data (engineer|engineering|scientist|analyst)|machine learning (engineer|scientist)|data scientist|data analyst|business intelligence|bi analyst|etl|analytics|insights|reporting)\b/i;
 
-const AI_TITLE =
-  /\b(ai|artificial intelligence|generative ai|gen ?ai|genai|machine learning|ml|deep learning|neural networks?|llms?|large language models?|prompt engineer(ing)?|conversational ai|computer vision|nlp|natural language processing|mlops|rag|retrieval[\s-]augmented generation|applied scientist|research scientist)\b/i;
-
 const AUDIO_TITLE =
   /\b(audio|sound|music|produc(?:er|tion)|mix(?:ing)?|record(?:ing)?|composer|dsp|voic(?:e|es)?|sound design)\b/i;
 
@@ -113,7 +112,7 @@ export function selectRemotiveJobs(jobs, track, limit = 100) {
       } // end if software
 
       if (track === "ai") {
-        return AI_TITLE.test(job.title);
+        return isAiTitle(job.title);
       } // end if ai
 
       return DATA_TITLE.test(job.title);

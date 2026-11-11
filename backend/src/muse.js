@@ -39,6 +39,10 @@ export async function getMuseJobs({ track, location }) {
 
     const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
 
+    // The Muse sometimes rejects anonymous/datacenter requests. Treat an
+    // auth block as "no more listings" instead of a user-facing warning.
+    if (response.status === 401 || response.status === 403) break;
+
     if (!response.ok) {
       throw new Error(`The Muse returned ${response.status}`);
     } // end if not ok

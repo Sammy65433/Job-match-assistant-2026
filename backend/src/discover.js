@@ -16,6 +16,10 @@ import { getUsaJobs } from "./usajobs.js";
 import { getReedJobs } from "./reed.js";
 import { getFindworkJobs } from "./findwork.js";
 import { CACHE_TTL_MS } from "./config.js";
+import { repairText } from "./text.js";
+import { ENTRY_TITLE, SENIOR_TITLE, isAiTitle } from "./titles.js";
+
+export { ENTRY_TITLE, SENIOR_TITLE };
 
 const SOFTWARE_TITLE =
   /\b(software (engineer|developer)|web developer|front[\s-]?end (engineer|developer)|back[\s-]?end (engineer|developer)|full[\s-]?stack (engineer|developer)|react developer|javascript developer|node(?:\.js)? developer)\b/i;
@@ -23,19 +27,10 @@ const SOFTWARE_TITLE =
 const DATA_TITLE =
   /\b(data (engineer|engineering|scientist|analyst)|machine learning (engineer|scientist)|data scientist|data analyst|business intelligence|bi analyst|etl|analytics|insights|reporting)\b/i;
 
-const AI_TITLE =
-  /\b(ai|artificial intelligence|generative ai|gen ?ai|genai|machine learning|ml|deep learning|neural networks?|llms?|large language models?|prompt engineer(ing)?|conversational ai|computer vision|nlp|natural language processing|mlops|rag|retrieval[\s-]augmented generation|ai (engineer|developer|solutions? developer|solutions? engineer|application developer|analyst|specialist|consultant|architect|integrator|product manager|researcher|trainer)|machine learning (engineer|developer|scientist)|ml engineer|applied scientist|research scientist|ai\/ml|ml\/ai|hugging face|openai)\b/i;
-
-export const SENIOR_TITLE =
-  /\b(senior|sr\.?|staff|principal|lead|head|director|manager|architect|vp|vice president|chief)\b/i;
-
-export const ENTRY_TITLE =
-  /\b(junior|jr\.?|entry[\s-]?level|associate|graduate|new grad)\b/i;
-
 export function titleMatchesTrack(title, track) {
   if (track === "software") return SOFTWARE_TITLE.test(title);
   if (track === "data") return DATA_TITLE.test(title);
-  if (track === "ai") return AI_TITLE.test(title);
+  if (track === "ai") return isAiTitle(title);
   return false;
 } // end titleMatchesTrack
 
@@ -88,21 +83,32 @@ const LOCATION_ORDER = {
 
 /* ---------- Job rules ---------- */
 
+function repairJobFields(job) {
+  return {
+    ...job,
+    title: repairText(job.title),
+    company: repairText(job.company),
+    location: repairText(job.location),
+    description: repairText(job.description)
+  };
+} // end repairJobFields
+
 function classifyJob(job, track) {
-  const title = typeof job.title === "string" ? job.title.trim() : "";
+  const fixed = repairJobFields(job);
+  const title = fixed.title.trim();
 
   if (!title || SENIOR_TITLE.test(title)) return null;
   if (!titleMatchesTrack(title, track)) return null;
 
-  const locationGroup = classifyLocation(job.location);
+  const locationGroup = classifyLocation(fixed.location);
 
   if (locationGroup === "outside-region") return null;
 
   return {
-    ...job,
+    ...fixed,
     title,
     levelGroup:
-      job.entryLevelListed || ENTRY_TITLE.test(title)
+      fixed.entryLevelListed || ENTRY_TITLE.test(title)
         ? "explicit-entry-level"
         : "level-unspecified",
     locationGroup

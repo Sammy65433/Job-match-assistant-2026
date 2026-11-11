@@ -1,78 +1,31 @@
+import { buildSkillGroups, cleanSkill, matchGroups } from "./skills.js";
+
 const MIN_DETECTED = 3;
 
 const toTenScale = (matched, total) =>
   total ? Math.max(1, Math.round((matched / total) * 100) / 10) : 0;
 
-// Skills we look for in listing text. Add terms here to tune detection.
-const VOCAB = {
-  software: [
-    "javascript", "typescript", "react", "node.js", "express", "mongodb",
-    "sql", "postgresql", "python", "java", "html", "css", "git",
-    "rest apis", "graphql", "docker", "aws", "next.js", "vue", "angular",
-    "c#", ".net", "php", "tailwind", "redux"
-  ],
-  data: [
-    "sql", "python", "excel", "tableau", "power bi", "etl",
-    "data analysis", "data visualization", "data modeling", "looker",
-    "snowflake", "dbt", "statistics", "sqlite", "pandas", "bigquery"
-  ],
-  audio: [
-    "pro tools", "logic pro", "ableton live", "ableton", "audio editing",
-    "audio recording", "vocal tracking", "vocal production", "mixing",
-    "mastering", "sound design", "live sound", "signal flow",
-    "microphone placement", "studio sessions", "podcast production"
-  ],
-  ai: [
-    "python", "generative ai", "large language models", "llm", "llms",
-    "prompt engineering", "openai", "hugging face", "api", "apis",
-    "rest apis", "git", "github", "uv", "pytest", "unit testing",
-    "debugging", "machine learning", "deep learning", "nlp",
-    "computer vision", "embeddings", "vector databases", "langchain",
-    "llamaindex", "streamlit", "fastapi", "flask", "django", "json",
-    "responsible ai", "model evaluation", "fine-tuning", "transformers",
-    "pytorch", "tensorflow", "scikit-learn", "pandas", "numpy",
-    "jupyter", "docker", "aws", "azure", "gcp", "sql", "rag"
-  ]
-}; // end VOCAB
-
-function clean(value) {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
-} // end clean
-
-function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-} // end escapeRegex
-
-function containsPhrase(text, phrase) {
-  return new RegExp(
-    `(?<![a-z0-9])${escapeRegex(phrase)}(?![a-z0-9])`
-  ).test(text);
-} // end containsPhrase
-
 export function withScores(jobs, track, skills) {
-  const mine = [...new Set(skills.map(clean))];
+  const mine = [...new Set((skills || []).map(cleanSkill).filter(Boolean))];
 
   if (mine.length === 0) return jobs;
 
-  const have = new Set(mine);
-  const candidates = [...new Set([...(VOCAB[track] || []), ...mine])];
+  const { groups, alias } = buildSkillGroups(track, mine);
+  const have = new Set(mine.map((skill) => alias.get(skill) ?? skill));
 
   return jobs.map((job) => {
-    const text = clean(`${job.title || ""} ${job.description || ""}`);
-    const detected = candidates.filter((word) => containsPhrase(text, word));
+    const text = cleanSkill(`${job.title || ""} ${job.description || ""}`);
+    const { detected, matched, missing } = matchGroups(text, groups, have);
 
     if (detected.length < MIN_DETECTED) {
       return { ...job, matchScore: null, matchedSkills: [], missingSkills: [] };
     } // end if too little text
 
-    const matchedSkills = detected.filter((word) => have.has(word));
-    const missingSkills = detected.filter((word) => !have.has(word));
-
     return {
       ...job,
-      matchScore: toTenScale(matchedSkills.length, detected.length),
-      matchedSkills,
-      missingSkills
+      matchScore: toTenScale(matched.length, detected.length),
+      matchedSkills: matched,
+      missingSkills: missing
     };
   }); // end map
 } // end withScores

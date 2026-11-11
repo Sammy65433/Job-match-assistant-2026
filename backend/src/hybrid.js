@@ -6,6 +6,7 @@ import { searchAdzunaJobs } from "./adzuna.js";
 import { getJoobleJobs } from "./jooble.js";
 import { runLoaders, statsKey } from "./loaders.js";
 import { titleMatchesTrack, SENIOR_TITLE, ENTRY_TITLE } from "./discover.js";
+import { repairText } from "./text.js";
 import { detectWorkMode } from "./workMode.js";
 import { CACHE_TTL_MS } from "./config.js";
 
@@ -40,17 +41,24 @@ function inArea(location, area) {
 } // end inArea
 
 function classifyJob(job, track) {
-  const title = typeof job.title === "string" ? job.title.trim() : "";
+  const fixed = {
+    ...job,
+    title: repairText(job.title),
+    company: repairText(job.company),
+    location: repairText(job.location),
+    description: repairText(job.description)
+  };
+  const title = fixed.title.trim();
 
   if (!title || SENIOR_TITLE.test(title)) return null;
   if (!titleMatchesTrack(title, track)) return null;
 
   return {
-    ...job,
+    ...fixed,
     title,
-    workMode: detectWorkMode(job),
+    workMode: detectWorkMode(fixed),
     levelGroup:
-      job.entryLevelListed || ENTRY_TITLE.test(title)
+      fixed.entryLevelListed || ENTRY_TITLE.test(title)
         ? "explicit-entry-level"
         : "level-unspecified"
   };

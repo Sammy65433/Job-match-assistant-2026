@@ -1,5 +1,6 @@
 import { CACHE_TTL_MS } from "./config.js";
-import { asHttpsUrl, stripHtml } from "./text.js";
+import { asHttpsUrl, repairText, stripHtml } from "./text.js";
+import { isAiTitle } from "./titles.js";
 
 const REMOTEOK_URL = "https://remoteok.com/api";
 const CACHE_MS = CACHE_TTL_MS;
@@ -35,12 +36,12 @@ async function fetchJobs() {
     )
     .map((job) => ({
       id: `remotok-${job.id}`,
-      title: cleanText(job.position),
-      company: cleanText(job.company) || "Company not listed",
+      title: repairText(job.position),
+      company: repairText(job.company) || "Company not listed",
       category: cleanText(Array.isArray(job.tags) ? job.tags[0] : ""),
-      location: cleanText(job.location),
+      location: repairText(job.location),
       url: asHttpsUrl(job.apply_url || job.url),
-      description: stripHtml(job.description, 8000),
+      description: repairText(stripHtml(job.description, 8000)),
       source: "RemoteOK",
       postedAt: Number.isFinite(Number(job.epoch))
         ? new Date(Number(job.epoch) * 1000).toISOString()
@@ -78,15 +79,14 @@ const SOFTWARE_TITLE =
 const DATA_TITLE =
   /\b(data|analyst|analytics|etl|scientist|machine learning|insights|reporting)\b/i;
 
-const AI_TITLE =
-  /\b(ai|artificial intelligence|generative ai|gen ?ai|genai|machine learning|ml|deep learning|neural networks?|llms?|large language models?|prompt engineer(ing)?|conversational ai|computer vision|nlp|natural language processing|mlops|rag|retrieval[\s-]augmented generation|applied scientist|research scientist)\b/i;
-
 export function selectRemoteOkJobs(jobs, track, limit = 100) {
   const titlePattern =
-    track === "data" ? DATA_TITLE : track === "ai" ? AI_TITLE : SOFTWARE_TITLE;
+    track === "data" ? DATA_TITLE : track === "ai" ? null : SOFTWARE_TITLE;
 
   return jobs
     .filter((job) => !SENIOR_TITLE.test(job.title))
-    .filter((job) => titlePattern.test(job.title))
+    .filter((job) =>
+      track === "ai" ? isAiTitle(job.title) : titlePattern.test(job.title)
+    )
     .slice(0, limit);
 }
