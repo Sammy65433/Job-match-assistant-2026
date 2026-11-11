@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import Logo from "./components/Logo.jsx";
 
 import "./App.css";
 import { TRACKS, parseSkills } from "./tracks.js";
@@ -364,10 +363,7 @@ export default function App() {
 
   return (
     <main className="page">
-      <h1 className="app-title">
-  <Logo />
-  <span className="visually-hidden">Job Match Assistant</span>
-</h1>
+      <h1 className="app-title">Job Match Assistant</h1>
       <p>
         Find real listings, review requirements, and track jobs you save.
         Discovery results are not verified resume matches.

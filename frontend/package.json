@@ -10,15 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.9",
-    "@react-three/fiber": "^9.8.2",
-    "3dsvg": "^0.2.1",
     "lucide-react": "^1.58.0",
     "mammoth": "^1.13.0",
     "pdfjs-dist": "^6.4.299",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "three": "^0.187.0"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

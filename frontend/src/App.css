@@ -77,11 +77,6 @@
   gap: 14px;
 } /* end .app-title */
 
-.page .app-title svg {
-  flex-shrink: 0;
-  color: var(--cyan);
-} /* end .app-title svg */
-
 .page .group-title {
   display: block;
   margin: 28px 0 8px;
@@ -614,11 +609,6 @@
 
   .page-nav button {
     flex: 1 1 auto;
-  }
-
-  .page .app-title svg {
-    width: 30px;
-    height: 30px;
   }
 } /* end mobile */
 

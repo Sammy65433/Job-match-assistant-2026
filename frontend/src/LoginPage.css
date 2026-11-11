@@ -1,5 +1,6 @@
 .login-page {
   min-height: 100vh;
+  min-height: 100svh;
   display: grid;
   place-items: center;
   padding: 32px 20px;
@@ -15,6 +16,12 @@
   grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
   gap: clamp(24px, 5vw, 72px);
   align-items: center;
+}
+
+/* Grid items default to a min-content floor. Without min-width: 0 the
+   fixed-width 3D logo keeps the column from shrinking on phones. */
+.login-layout > * {
+  min-width: 0;
 }
 
 .login-intro {
@@ -122,17 +129,46 @@
 }
 
 @media (max-width: 750px) {
+  .login-page {
+    /* Start at the top so the form is never centered above the viewport. */
+    align-content: start;
+    padding: 24px 16px 40px;
+  }
+
   .login-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
     max-width: 520px;
+    gap: 24px;
   }
 
   .login-intro h1 {
-    font-size: clamp(2.4rem, 10vw, 3.7rem);
+    margin-bottom: 14px;
+    font-size: clamp(2rem, 9vw, 2.8rem);
+  }
+
+  .login-intro p {
+    max-width: 100%;
+    font-size: 1rem;
+  }
+
+  .login-track-list {
+    margin-top: 16px;
+    gap: 8px;
+  }
+
+  .login-card {
+    width: 100%;
   }
 }
 .login-page {
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  overflow-wrap: break-word;
+}
+
+.google-signin,
+.google-signin iframe {
+  max-width: 100%;
 }
 
 .login-card form {
@@ -159,7 +195,4 @@
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-}
-.login-intro .app-logo {
-  margin-bottom: 1.5rem;
 }

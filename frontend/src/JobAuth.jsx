@@ -176,7 +176,7 @@ export default function JobAuth({ onAuthenticated, request }) {
       </button>
 
       <p>Or continue with Google</p>
-      <div ref={googleButtonRef} />
+      <div ref={googleButtonRef} className="google-signin" />
 
       {error && <p role="alert" className="error">{error}</p>}
     </section>
