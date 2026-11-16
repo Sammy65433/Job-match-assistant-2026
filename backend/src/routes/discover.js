@@ -26,7 +26,7 @@ router.get("/remote", async (req, res) => {
   if (!DISCOVERY_TRACKS.includes(req.query.track)) {
     return res
       .status(400)
-      .json({ error: "Choose the software, data, or AI track." });
+      .json({ error: "Choose a valid discovery track." });
   }
 
   try {
@@ -58,7 +58,7 @@ router.get("/hybrid", async (req, res) => {
   if (!DISCOVERY_TRACKS.includes(track)) {
     return res
       .status(400)
-      .json({ error: "Choose the software, data, or AI track." });
+      .json({ error: "Choose a valid discovery track." });
   }
 
   if (!AREAS.includes(area)) {

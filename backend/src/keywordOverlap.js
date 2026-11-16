@@ -3,7 +3,7 @@ import { buildSkillGroups, cleanSkill, containsPhrase } from "./skills.js";
 const MAX_RESUME_LENGTH = 20000;
 const MAX_JOB_LENGTH = 15000;
 const MAX_KEYWORDS = 100;
-const SCORED_TRACKS = new Set(["software", "data", "audio", "ai"]);
+const SCORED_TRACKS = new Set(["software", "data", "audio", "ai", "ai-engineer"]);
 
 export function compareFullJobDescription(body) {
   const { resumeText, jobDescription, track } = body ?? {};

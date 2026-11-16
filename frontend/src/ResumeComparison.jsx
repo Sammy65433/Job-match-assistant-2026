@@ -13,7 +13,9 @@ const STARTER_TEXT = {
   audio:
     "Recorded and edited vocal sessions, set up microphones and signal flow, organized studio sessions, and contributed to vocal production. Used Pro Tools, Logic Pro, and Ableton Live.",
   ai:
-    "Built Python applications that call large language model APIs, designed prompts, validated and parsed JSON responses, and handled errors and debugging. Used Git, GitHub, uv, and pytest to organize and test AI projects."
+    "Built Python applications that call large language model APIs, designed prompts, validated and parsed JSON responses, and handled errors and debugging. Used Git, GitHub, uv, and pytest to organize and test AI projects.",
+  "ai-engineer":
+    "Built Python AI applications that call LLM APIs, designed prompts, and validated JSON responses. Worked with RAG, embeddings, vector databases, model evaluation, and API integration, and used Git, GitHub, uv, and pytest to organize and test projects."
 };
 
 export default function ResumeComparison({

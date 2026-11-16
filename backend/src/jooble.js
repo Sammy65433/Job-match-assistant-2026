@@ -4,7 +4,8 @@ const KEYWORDS = {
   software: "software developer",
   data: "data analyst",
   audio: "audio engineer",
-  ai: "machine learning engineer"
+  ai: "machine learning engineer",
+  "ai-engineer": "ai engineer"
 }; // end KEYWORDS
 
 function stripHtml(value) {

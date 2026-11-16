@@ -14,14 +14,15 @@ export default function LoginPage({ request, onAuthenticated, notice }) {
 
           <h1>Find Work That Fits Your Skills.</h1>
           <p>
-            Explore software, data, audio, and AI jobs. Save opportunities
-            and track applications you submit.
+            Explore software, data, audio, AI engineering, and AI solutions
+            jobs. Save opportunities and track applications you submit.
           </p>
 
           <div className="login-track-list" aria-label="Career tracks">
             <span><BriefcaseBusiness size={17} aria-hidden="true" /> Software Engineering</span>
             <span><ChartNoAxesCombined size={17} aria-hidden="true" /> Data Analytics</span>
             <span><Headphones size={17} aria-hidden="true" /> Audio Production</span>
+            <span><BrainCircuit size={17} aria-hidden="true" /> AI Engineering</span>
             <span><BrainCircuit size={17} aria-hidden="true" /> AI Solutions</span>
           </div>
         </section>

@@ -1,6 +1,6 @@
-export const TRACKS = ["software", "data", "audio", "ai"];
+export const TRACKS = ["software", "data", "audio", "ai", "ai-engineer"];
 
-export const DISCOVERY_TRACKS = ["software", "data", "ai"];
+export const DISCOVERY_TRACKS = ["software", "data", "ai", "ai-engineer"];
 
 export const AREAS = ["los_angeles", "newark"];
 

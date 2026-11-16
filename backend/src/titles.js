@@ -15,6 +15,13 @@ const AI_TOPIC =
 const AI_ROLE =
   /\b(?:engineers?|engineering|developers?|development|scientists?|programmers?|architects?|integrators?|consultants?|specialists?|interns?|apprentices?)\b/i;
 
+/* AI engineer is narrower than the solutions-developer track: it keeps
+ * engineering/development titles and drops scientist, consultant, and
+ * specialist roles that usually require research or pre-sales work.
+ */
+const AI_ENGINEER_ROLE =
+  /\b(?:engineers?|engineering|developers?|development|programmers?|architects?|mlops|integrators?)\b/i;
+
 const AI_EXCLUDE =
   /\b(?:account executives?|sales|business development|marketing|growth|recruiters?|recruiting|talent|human resources|hr|legal|counsel|finance|fp&a|accounting|physicians?|medical|clinical|nurses?|therapists?|psychiatrists?|pharmacists?|teachers?|professors?|instructors?|tutors?|trainers?|training|annotators?|annotation|reviewers?|writers?|copywriters?|editors?|translators?|transcription|customer success|research scientists?|applied scientists?)\b/i;
 
@@ -25,3 +32,11 @@ export function isAiTitle(title) {
 
   return AI_TOPIC.test(text) && AI_ROLE.test(text);
 } // end isAiTitle
+
+export function isAiEngineerTitle(title) {
+  const text = typeof title === "string" ? title : "";
+
+  if (!text || AI_EXCLUDE.test(text)) return false;
+
+  return AI_TOPIC.test(text) && AI_ENGINEER_ROLE.test(text);
+} // end isAiEngineerTitle

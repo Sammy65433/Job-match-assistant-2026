@@ -75,6 +75,11 @@ ai: {
   modes: ["remote", "hybrid"],
   defaultSkills: "Python, generative AI, LLMs, large language models, prompt engineering, AI application development, REST APIs, JSON, Git, GitHub, uv, pytest, debugging, responsible AI, OpenAI API, Hugging Face, pandas, Streamlit",
 },
+"ai-engineer": {
+  label: "AI engineer",
+  modes: ["remote", "hybrid"],
+  defaultSkills: "Python, generative AI, LLMs, large language models, prompt engineering, RAG, embeddings, vector databases, OpenAI API, Hugging Face, REST APIs, JSON, pandas, NumPy, SQL, Git, GitHub, uv, pytest, debugging, responsible AI",
+},
 
 
 };

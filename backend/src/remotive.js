@@ -1,6 +1,6 @@
 import { CACHE_TTL_MS } from "./config.js";
 import { repairText } from "./text.js";
-import { isAiTitle } from "./titles.js";
+import { isAiTitle, isAiEngineerTitle } from "./titles.js";
 
 const REMOTIVE_URL = "https://remotive.com/api/remote-jobs";
 const CACHE_MS = CACHE_TTL_MS;
@@ -96,7 +96,7 @@ const AUDIO_TITLE =
   /\b(audio|sound|music|produc(?:er|tion)|mix(?:ing)?|record(?:ing)?|composer|dsp|voic(?:e|es)?|sound design)\b/i;
 
 export function selectRemotiveJobs(jobs, track, limit = 100) {
-  if (track !== "software" && track !== "data" && track !== "ai") {
+  if (track !== "software" && track !== "data" && track !== "ai" && track !== "ai-engineer") {
     return [];
   } // end if invalid track
 
@@ -114,6 +114,10 @@ export function selectRemotiveJobs(jobs, track, limit = 100) {
       if (track === "ai") {
         return isAiTitle(job.title);
       } // end if ai
+
+      if (track === "ai-engineer") {
+        return isAiEngineerTitle(job.title);
+      } // end if ai-engineer
 
       return DATA_TITLE.test(job.title);
     }) // end filter

@@ -17,7 +17,7 @@ import { getReedJobs } from "./reed.js";
 import { getFindworkJobs } from "./findwork.js";
 import { CACHE_TTL_MS } from "./config.js";
 import { repairText } from "./text.js";
-import { ENTRY_TITLE, SENIOR_TITLE, isAiTitle } from "./titles.js";
+import { ENTRY_TITLE, SENIOR_TITLE, isAiTitle, isAiEngineerTitle } from "./titles.js";
 
 export { ENTRY_TITLE, SENIOR_TITLE };
 
@@ -31,6 +31,7 @@ export function titleMatchesTrack(title, track) {
   if (track === "software") return SOFTWARE_TITLE.test(title);
   if (track === "data") return DATA_TITLE.test(title);
   if (track === "ai") return isAiTitle(title);
+  if (track === "ai-engineer") return isAiEngineerTitle(title);
   return false;
 } // end titleMatchesTrack
 
@@ -140,7 +141,7 @@ async function loadRemoteBoards() {
 } // end loadRemoteBoards
 
 export async function discoverRemoteJobs(track) {
-  if (track !== "software" && track !== "data" && track !== "ai") {
+  if (track !== "software" && track !== "data" && track !== "ai" && track !== "ai-engineer") {
     throw new Error("Choose the software, data, or AI track.");
   } // end if invalid track
 

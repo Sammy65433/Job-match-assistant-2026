@@ -6,7 +6,8 @@ const MAX_PAGES = 3;
 const CATEGORIES = {
   software: ["Software Engineering"],
   data: ["Data and Analytics", "Data Science"],
-  ai: ["Data Science", "Software Engineering"]
+  ai: ["Data Science", "Software Engineering"],
+  "ai-engineer": ["Data Science", "Software Engineering"]
 }; // end CATEGORIES
 
 const LEVELS = ["Entry Level"];

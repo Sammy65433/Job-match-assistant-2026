@@ -19,7 +19,7 @@ These tabs switch views in `App.jsx`; they are not separate browser URLs.
 
 ## Job discovery
 
-Software, data, and AI listings use the backend's remote and hybrid search, including Remotive, Jobicy, Himalayas, and newer The Muse/company-board integrations. Audio uses the Adzuna Los Angeles/Newark search, plus a Remotive source merged into the remote audio search. The AI solutions developer track shares the software/data remote and hybrid pipelines and filters titles for AI, machine learning, LLM, and prompt-engineering roles. A backend in-person software/data route has been added; do not claim an in-person frontend control works until it is connected and tested.
+Software, data, AI engineering, and AI solutions listings use the backend's remote and hybrid search, including Remotive, Jobicy, Himalayas, and newer The Muse/company-board integrations. Audio uses the Adzuna Los Angeles/Newark search, plus a Remotive source merged into the remote audio search. The AI solutions developer track shares the software/data remote and hybrid pipelines and filters titles for AI, machine learning, LLM, and prompt-engineering roles. The AI engineer track uses the same pipelines with a narrower engineering/development title filter and a separate skill vocabulary covering RAG, embeddings, vector databases, model evaluation, MLOps, and deployment. A backend in-person software/data route has been added; do not claim an in-person frontend control works until it is connected and tested.
 
 “Entry-level” and location labels are screening hints. A title without a level may still require years of experience. Search results are **not verified resume matches**.
 

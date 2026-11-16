@@ -5,7 +5,8 @@ const REMOSHIFT_URL = "https://remoshift.com/api/v1/jobs.open";
 const QUERIES = {
   software: "software engineer",
   data: "data analyst",
-  ai: "machine learning engineer"
+  ai: "machine learning engineer",
+  "ai-engineer": "ai engineer"
 };
 
 export async function getRemoShiftJobs(track) {

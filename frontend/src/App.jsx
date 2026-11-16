@@ -21,12 +21,13 @@ function defaultSkillsByTrack() {
     software: TRACKS.software.defaultSkills,
     data: TRACKS.data.defaultSkills,
     audio: TRACKS.audio.defaultSkills,
-    ai: TRACKS.ai.defaultSkills
+    ai: TRACKS.ai.defaultSkills,
+    "ai-engineer": TRACKS["ai-engineer"].defaultSkills
   };
 } // end defaultSkillsByTrack
 
 function emptyResumeTextByTrack() {
-  return { software: "", data: "", audio: "", ai: "" };
+  return { software: "", data: "", audio: "", ai: "", "ai-engineer": "" };
 } // end emptyResumeTextByTrack
 
 export default function App() {

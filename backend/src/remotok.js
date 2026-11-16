@@ -1,6 +1,6 @@
 import { CACHE_TTL_MS } from "./config.js";
 import { asHttpsUrl, repairText, stripHtml } from "./text.js";
-import { isAiTitle } from "./titles.js";
+import { isAiTitle, isAiEngineerTitle } from "./titles.js";
 
 const REMOTEOK_URL = "https://remoteok.com/api";
 const CACHE_MS = CACHE_TTL_MS;
@@ -80,13 +80,16 @@ const DATA_TITLE =
   /\b(data|analyst|analytics|etl|scientist|machine learning|insights|reporting)\b/i;
 
 export function selectRemoteOkJobs(jobs, track, limit = 100) {
+  const isAi = track === "ai" || track === "ai-engineer";
   const titlePattern =
-    track === "data" ? DATA_TITLE : track === "ai" ? null : SOFTWARE_TITLE;
+    track === "data" ? DATA_TITLE : isAi ? null : SOFTWARE_TITLE;
 
   return jobs
     .filter((job) => !SENIOR_TITLE.test(job.title))
-    .filter((job) =>
-      track === "ai" ? isAiTitle(job.title) : titlePattern.test(job.title)
-    )
+    .filter((job) => {
+      if (track === "ai") return isAiTitle(job.title);
+      if (track === "ai-engineer") return isAiEngineerTitle(job.title);
+      return titlePattern.test(job.title);
+    })
     .slice(0, limit);
 }
