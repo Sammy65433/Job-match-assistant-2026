@@ -19,7 +19,9 @@ export default function FindJobsView({
   onAreaChange,
   onSubmit,
   onSave,
-  onApply
+  onApply,
+  resumeText,
+  request
 }) {
   return (
     <>
@@ -49,6 +51,9 @@ export default function FindJobsView({
           onSave={onSave}
           onApply={onApply}
           appliedListingIds={appliedListingIds}
+          resumeText={resumeText}
+          skillText={skillText}
+          request={request}
         />
       </section>
     </>

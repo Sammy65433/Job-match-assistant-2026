@@ -3,6 +3,7 @@ import {
   ClipboardPaste,
   FileCheck2,
   LogOut,
+  PenLine,
   Search
 } from "lucide-react";
 
@@ -10,6 +11,7 @@ const TABS = [
   ["jobs", "Find jobs", Search],
   ["preview", "Preview a pasted job", ClipboardPaste],
   ["resume", "Resume evidence", FileCheck2],
+  ["cover", "Cover letter", PenLine],
   ["saved", "Saved jobs", Bookmark]
 ];
 

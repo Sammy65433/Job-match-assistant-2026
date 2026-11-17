@@ -18,6 +18,7 @@ export default function SavedJobsView({
   request,
   onStatusChange,
   onInterviewsChange,
+  onWriteCoverLetter,
   onError
 }) {
   const interviewItems = savedJobs
@@ -103,11 +104,13 @@ export default function SavedJobsView({
           <SavedJobCard
             key={job._id}
             job={job}
+            track={track}
             resumeText={resumeText}
             skillText={skillText}
             request={request}
             onStatusChange={onStatusChange}
             onInterviewsChange={onInterviewsChange}
+            onWriteCoverLetter={onWriteCoverLetter}
             onError={onError}
           />
         ))}

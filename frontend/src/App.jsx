@@ -7,6 +7,7 @@ import LoginPage from "./LoginPage.jsx";
 import { apiRequest } from "./api.js";
 import { descriptionText } from "./descriptionText.js";
 import AppNav from "./components/AppNav.jsx";
+import CoverLetterView from "./components/CoverLetterView.jsx";
 import FindJobsView from "./components/FindJobsView.jsx";
 import PreviewJobView from "./components/PreviewJobView.jsx";
 import SavedJobsView from "./components/SavedJobsView.jsx";
@@ -56,6 +57,7 @@ export default function App() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [coverPrefill, setCoverPrefill] = useState(null);
 
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -73,6 +75,7 @@ export default function App() {
     setCompany("");
     setDescription("");
     setRequiredSkillText("");
+    setCoverPrefill(null);
     setPage("jobs");
   }, []);
 
@@ -108,6 +111,8 @@ export default function App() {
       path.startsWith("/api/saved-jobs") ||
       path.startsWith("/api/apply") ||
       path.startsWith("/api/resume/") ||
+      path.startsWith("/api/cover-letters") ||
+      path.startsWith("/api/fit-explainer") ||
       path === "/api/matches/custom";
 
     if (isPrivate && !token) {
@@ -352,6 +357,15 @@ export default function App() {
     }
   } // end updateInterviews
 
+  function writeCoverLetter(job) {
+    setCoverPrefill({
+      company: String(job.company || "").trim().slice(0, 150),
+      role: String(job.title || "").trim().slice(0, 150),
+      jobDescription: descriptionText(job.description || "").slice(0, 15000)
+    });
+    setPage("cover");
+  } // end writeCoverLetter
+
   if (!auth) {
     return (
       <LoginPage
@@ -416,11 +430,14 @@ export default function App() {
           onSubmit={findRealJobs}
           onSave={saveListing}
           onApply={applyListing}
+          resumeText={resumeTextByTrack[track]}
+          request={request}
         />
       )}
 
       {page === "preview" && (
         <PreviewJobView
+          track={track}
           title={title}
           company={company}
           description={description}
@@ -429,6 +446,9 @@ export default function App() {
           saving={saving}
           formError={formError}
           customMatch={customMatch}
+          resumeText={resumeTextByTrack[track]}
+          skillText={skillText}
+          request={request}
           onTitleChange={setTitle}
           onCompanyChange={setCompany}
           onDescriptionChange={setDescription}
@@ -454,6 +474,23 @@ export default function App() {
         />
       )}
 
+      {page === "cover" && (
+        <CoverLetterView
+          track={track}
+          trackLabel={TRACKS[track].label}
+          request={request}
+          resumeText={resumeTextByTrack[track]}
+          onResumeTextChange={(text) =>
+            setResumeTextByTrack((current) => ({
+              ...current,
+              [track]: text
+            }))
+          }
+          prefill={coverPrefill}
+          onPrefillApplied={() => setCoverPrefill(null)}
+        />
+      )}
+
       {page === "saved" && (
         <SavedJobsView
           track={track}
@@ -465,6 +502,7 @@ export default function App() {
           request={request}
           onStatusChange={updateStatus}
           onInterviewsChange={updateInterviews}
+          onWriteCoverLetter={writeCoverLetter}
           onError={setSavedJobsError}
         />
       )}

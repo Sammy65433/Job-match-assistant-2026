@@ -600,6 +600,147 @@
   gap: 8px;
 } /* end login icons */
 
+/* ---------- Cover letter ---------- */
+.page .cover-grid,
+.page .cover-contact .cover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+} /* end cover grid */
+
+.page .cover-grid label {
+  margin-bottom: 4px;
+} /* end cover grid label */
+
+.page .cover-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+} /* end cover actions */
+
+.page button.secondary {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  box-shadow: none;
+} /* end secondary button */
+
+.page button.secondary:hover:not(:disabled) {
+  border-color: var(--cyan);
+  background: rgba(34, 211, 238, 0.1);
+  box-shadow: none;
+} /* end secondary hover */
+
+.page .cover-contact {
+  padding: 12px 0;
+} /* end cover contact */
+
+.page .cover-contact[open] {
+  display: grid;
+  gap: 12px;
+} /* end open contact */
+
+.page .cover-notice {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  border-left: 4px solid var(--success);
+  border-radius: 10px;
+  background: rgba(52, 211, 153, 0.1);
+  color: #a7f3d0;
+} /* end cover notice */
+
+.page .cover-letter-text {
+  min-height: 380px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  line-height: 1.65;
+} /* end cover letter textarea */
+
+.page .cover-drafts {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+} /* end cover drafts */
+
+.page .cover-drafts li {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+} /* end cover draft row */
+
+.page button.cover-draft-open {
+  flex: 1 1 auto;
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+  width: auto;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: none;
+  text-align: left;
+} /* end cover draft open */
+
+.page button.cover-draft-open strong {
+  color: #fff;
+} /* end draft title */
+
+.page button.cover-draft-open span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+} /* end draft meta */
+
+.page button.cover-draft-open[aria-current="true"] {
+  border-color: var(--cyan);
+  background: rgba(34, 211, 238, 0.1);
+} /* end active draft */
+
+.page button.cover-draft-delete {
+  padding: 10px 14px;
+} /* end delete draft */
+
+/* ---------- AI fit explainer ---------- */
+.page .fit-explainer {
+  display: grid;
+  gap: 10px;
+  margin: 6px 0;
+} /* end fit explainer */
+
+.page .fit-explainer-result {
+  display: block;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--violet);
+  border-radius: 12px;
+  background: rgba(167, 139, 250, 0.08);
+} /* end explainer result */
+
+.page .fit-explainer-result h4 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 1rem;
+} /* end explainer heading */
+
+.page .job .fit-explainer-text {
+  display: block;
+  white-space: pre-line;
+  color: var(--text);
+} /* end explainer text */
+
+.page .job .fit-explainer-note {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+} /* end explainer note */
+
 /* ---------- Responsive and motion ---------- */
 @media (max-width: 600px) {
   .page {

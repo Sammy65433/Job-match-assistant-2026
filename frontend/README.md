@@ -13,7 +13,8 @@ The app opens on a dedicated sign-in screen. Users can create an email/password 
 - **Find jobs:** Choose a career track, search listings, open their original source links, and save a listing.
 - **Preview a pasted job:** Enter a job found elsewhere and its required skills for a screening estimate.
 - **Resume evidence:** Enter editable resume text and manually reviewed requirements for phrase checks.
-- **Saved jobs:** Read saved listings, expand descriptions, open application links, check limited keyword overlap, and manually update application status.
+- **Cover letter:** Paste a company/job description, generate a tailored letter with Gemini, edit it, copy or download it, and reopen saved drafts.
+- **Saved jobs:** Read saved listings, expand descriptions, open application links, check limited keyword overlap, explain the fit, write a cover letter, and manually update application status.
 
 These tabs switch views in `App.jsx`; they are not separate browser URLs.
 
@@ -41,6 +42,8 @@ VITE_GOOGLE_CLIENT_ID=your_google_web_client_id
 
 For the deployed Static Site, configure `VITE_API_URL` with the deployed backend origin and `VITE_GOOGLE_CLIENT_ID` with the Google Web client ID. Vite embeds these values in the public build. **Never put MongoDB credentials, the Adzuna key, a Google client secret, or `JOB_AUTH_SECRET` in `VITE_` variables.**
 
+Cover letters and fit explanations also need `GEMINI_API_KEY` in the backend environment. The key is used only by the Express server and must never be added to a `VITE_` variable.
+
 ## Main source files
 
 | File | Purpose |
@@ -55,6 +58,9 @@ For the deployed Static Site, configure `VITE_API_URL` with the deployed backend
 | `src/SaveListingButton.jsx` | Save discovered listings |
 | `src/ResumeComparison.jsx` | Manual resume phrase checks |
 | `src/ResumeJobCheck.jsx` | Keyword overlap for saved jobs |
+| `src/components/CoverLetterView.jsx` | Gemini cover-letter form, editor, drafts, copy, download, and print |
+| `src/components/FitExplainer.jsx` | Gemini plain-language fit and gap explanation |
+| `src/resumeStarters.js` | Shared starter background text per career track |
 | `src/descriptionText.js` | Convert HTML-formatted job descriptions to displayed plain text |
 | `src/tracks.js` | Career-track labels and editable skill defaults |
 
@@ -65,3 +71,5 @@ For the deployed Static Site, configure `VITE_API_URL` with the deployed backend
 - Real-listing salary filtering is not implemented.
 - Some job sources provide incomplete descriptions. Keyword overlap does not establish qualification.
 - Resume text is sent to the backend for checks, but those checks do not save it as a profile.
+- AI-generated cover letters and fit explanations can be incomplete or wrong. They use only the text provided, but every claim still needs review.
+- Cover-letter drafts store the pasted job text and background text used to generate them; delete drafts you no longer need.

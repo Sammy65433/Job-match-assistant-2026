@@ -21,7 +21,9 @@ I built this app to organize job searches across software engineering, data anal
 - Saves multiple interview rounds per job with date/time, round name, contact, location or meeting link, and notes.
 - Supports email/password accounts and **Continue with Google**. Google verifies identity; MongoDB remains the account and job database.
 - Provides editable career-track skills and limited resume-text phrase and keyword-overlap checks.
-- Offers four views: **Find jobs**, **Preview a pasted job**, **Resume evidence**, and **Saved jobs**.
+- Explains a listing's fit score in plain language with Google Gemini, including which skills are supported and which gaps to address.
+- Generates tailored cover letters from a pasted company/job description and saves editable drafts to each account.
+- Offers five views: **Find jobs**, **Preview a pasted job**, **Resume evidence**, **Cover letter**, and **Saved jobs**.
 
 The app does **not** submit applications, send resumes, or decide whether someone qualifies for a role.
 
@@ -36,7 +38,8 @@ Express API
     ├── Job-source adapters and cached discovery
     ├── Email/password and Google identity verification
     ├── Manual skill and keyword-overlap checks
-    └── MongoDB: user accounts, saved jobs, application statuses
+    ├── Google Gemini cover-letter and fit-explanation generation
+    └── MongoDB: user accounts, saved jobs, application statuses, cover letters
 ```
 
 The frontend never connects directly to MongoDB. Job-source credentials and the app-auth signing secret stay on the backend.
@@ -48,6 +51,22 @@ Discovery results are **search candidates**, not verified resume matches. Labels
 For a pasted job, the app can compare **manually entered required skills** with an editable skill list and shows a **1.0–10.0 fit score** (8.0+ is a strong match). That score is a screening estimate, not proof of qualification. The resume tools identify phrase or keyword overlap; they do not verify experience, work authorization, or every requirement in the full listing.
 
 **Applied** is a status the user selects after applying on the source site. It does not submit an application.
+
+## AI writing tools
+
+Two optional features call **Google Gemini** from the backend:
+
+- **Explain this fit** sends the listing text, the applicant's skills or resume text, and the computed fit data to Gemini, which explains the score and names honest next steps. It is not saved.
+- **Cover letter** sends the pasted company/job info, background text, tone, and contact details to Gemini. Generated letters are saved as editable drafts in MongoDB, scoped to the signed-in account.
+
+Both features use the backend-only `GEMINI_API_KEY`:
+
+```dotenv
+GEMINI_API_KEY=your_gemini_key
+# GEMINI_MODEL=gemini-3.5-flash
+```
+
+Never put the key in a `VITE_` variable. The default model is `gemini-3.5-flash`; the app disables Gemini thinking output so letters come back within the token budget. AI output can be wrong or overstated, so review every letter and explanation before using it. Do not let the model claim experience, degrees, or skills that are not in the entered profile.
 
 ## Run locally
 

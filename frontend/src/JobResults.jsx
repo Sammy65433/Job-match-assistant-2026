@@ -7,6 +7,8 @@ import {
   SearchCheck
 } from "lucide-react";
 import SaveListingButton from "./SaveListingButton.jsx";
+import FitExplainer from "./components/FitExplainer.jsx";
+import { descriptionText } from "./descriptionText.js";
 import {
   fitForScore,
   formatScore,
@@ -97,7 +99,16 @@ function MatchLine({ job }) {
   );
 } // end MatchLine
 
-function JobCard({ job, track, onSave, onApply, appliedListingIds }) {
+function JobCard({
+  job,
+  track,
+  onSave,
+  onApply,
+  appliedListingIds,
+  resumeText,
+  skillText,
+  request
+}) {
   const isApplied = appliedListingIds?.has(`${job.source}:${job.id}`) ?? false;
 
   return (
@@ -135,6 +146,19 @@ function JobCard({ job, track, onSave, onApply, appliedListingIds }) {
 
       <MatchLine job={job} />
 
+      <FitExplainer
+        track={track}
+        title={job.title}
+        company={job.company || "Company not listed"}
+        description={descriptionText(job.description || "")}
+        resumeText={resumeText}
+        skillText={skillText}
+        matchScore={typeof job.matchScore === "number" ? job.matchScore : null}
+        matchedSkills={job.matchedSkills || []}
+        missingSkills={job.missingSkills || []}
+        request={request}
+      />
+
       <p>
         Source: {job.source} ·{" "}
         <a href={job.url} target="_blank" rel="noopener noreferrer">
@@ -165,7 +189,10 @@ export default function JobResults({
   refreshHours = null,
   onSave,
   onApply,
-  appliedListingIds = new Set()
+  appliedListingIds = new Set(),
+  resumeText = "",
+  skillText = "",
+  request
 }) {
 
   const strongMatches = byScore(
@@ -263,6 +290,9 @@ export default function JobResults({
   onSave={onSave}
   onApply={onApply}
   appliedListingIds={appliedListingIds}
+  resumeText={resumeText}
+  skillText={skillText}
+  request={request}
 />
 
               ))}

@@ -1,7 +1,9 @@
 import { ClipboardPaste } from "lucide-react";
+import FitExplainer from "./FitExplainer.jsx";
 import { fitForScore, formatScore } from "../tracks.js";
 
 export default function PreviewJobView({
+  track,
   title,
   company,
   description,
@@ -10,6 +12,9 @@ export default function PreviewJobView({
   saving,
   formError,
   customMatch,
+  resumeText,
+  skillText,
+  request,
   onTitleChange,
   onCompanyChange,
   onDescriptionChange,
@@ -114,6 +119,19 @@ export default function PreviewJobView({
             <strong>Missing:</strong>{" "}
             {customMatch.missingSkills.join(", ") || "None"}
           </p>
+
+          <FitExplainer
+            track={track}
+            title={customMatch.title}
+            company={customMatch.company}
+            description={description}
+            resumeText={resumeText}
+            skillText={skillText}
+            matchScore={customMatch.score}
+            matchedSkills={customMatch.matchedSkills || []}
+            missingSkills={customMatch.missingSkills || []}
+            request={request}
+          />
         </article>
       )}
 

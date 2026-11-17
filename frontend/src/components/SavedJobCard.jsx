@@ -1,3 +1,6 @@
+import { PenLine } from "lucide-react";
+
+import FitExplainer from "./FitExplainer.jsx";
 import InterviewRounds from "./InterviewRounds.jsx";
 import ResumeJobCheck from "../ResumeJobCheck.jsx";
 import { descriptionText } from "../descriptionText.js";
@@ -24,11 +27,13 @@ function toDateInputValue(value) {
 
 export default function SavedJobCard({
   job,
+  track,
   resumeText,
   skillText,
   request,
   onStatusChange,
   onInterviewsChange,
+  onWriteCoverLetter,
   onError
 }) {
   const text = descriptionText(job.description);
@@ -156,6 +161,30 @@ export default function SavedJobCard({
         skillText={skillText}
         request={request}
       />
+
+      <FitExplainer
+        track={track}
+        title={job.title}
+        company={job.company || "Company not listed"}
+        description={text}
+        resumeText={resumeText}
+        skillText={skillText}
+        matchScore={null}
+        matchedSkills={[]}
+        missingSkills={job.requiredSkills || []}
+        request={request}
+      />
+
+      <div className="cover-actions">
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => onWriteCoverLetter(job)}
+        >
+          <PenLine size={17} aria-hidden="true" />
+          Write cover letter
+        </button>
+      </div>
 
       {job.url && (
         <p>
