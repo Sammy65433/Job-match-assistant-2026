@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FileText, PenLine, Trash2 } from "lucide-react";
+import { Building2, FileText, PenLine, Trash2 } from "lucide-react";
 
 import { DEFAULT_PROFILE } from "../profileDefaults.js";
 import { starterTextFor } from "../resumeStarters.js";
@@ -57,24 +57,30 @@ export default function CoverLetterView({
   resumeText,
   onResumeTextChange,
   prefill,
-  onPrefillApplied
+  onPrefillApplied,
+  onUseForInterviews
 }) {
   const [company, setCompany] = useState(() => prefill?.company || "");
   const [role, setRole] = useState(() => prefill?.role || "");
   const [jobDescription, setJobDescription] = useState(
     () => prefill?.jobDescription || ""
   );
-  const [tone, setTone] = useState("professional");
-  const [profile, setProfile] = useState(DEFAULT_PROFILE);
+  const [tone, setTone] = useState(() => prefill?.tone || "professional");
+  const [profile, setProfile] = useState(() => ({
+    ...DEFAULT_PROFILE,
+    ...(prefill?.profile || {})
+  }));
 
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState(() =>
-    prefill ? "Company and job description filled from the saved job." : ""
+    prefill
+      ? prefill.notice || "Company and job description filled from the saved job."
+      : ""
   );
 
-  const [draftId, setDraftId] = useState(null);
-  const [letter, setLetter] = useState("");
+  const [draftId, setDraftId] = useState(() => prefill?.draftId || null);
+  const [letter, setLetter] = useState(() => prefill?.letter || "");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
@@ -131,6 +137,29 @@ export default function CoverLetterView({
   function updateProfile(field, value) {
     setProfile((current) => ({ ...current, [field]: value }));
   } // end updateProfile
+
+  function coverDraft() {
+    return {
+      company: company.trim(),
+      role: role.trim(),
+      jobDescription,
+      resumeText,
+      profile: { ...profile },
+      tone,
+      draftId,
+      letter
+    };
+  } // end coverDraft
+
+  function useForInterviews() {
+    if (!company.trim()) {
+      setError("Add a company name before opening interview prep.");
+      return;
+    } // end if missing company
+
+    setError("");
+    onUseForInterviews?.(coverDraft());
+  } // end useForInterviews
 
   function resetForm() {
     setCompany("");
@@ -369,7 +398,8 @@ export default function CoverLetterView({
       </p>
       <p>
         The letter only uses what you enter here. Check every claim before you
-        send it.
+        send it. You can carry this company and job info into the Company
+        &amp; interviews tab without retyping it.
       </p>
 
       {error && (
@@ -449,6 +479,15 @@ export default function CoverLetterView({
             onClick={() => onResumeTextChange(starterTextFor(track))}
           >
             Use {trackLabel} starter background
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={useForInterviews}
+            disabled={!company.trim()}
+          >
+            <Building2 size={16} aria-hidden="true" />
+            Use for interview prep
           </button>
         </div>
 
@@ -546,6 +585,15 @@ export default function CoverLetterView({
             </button>
             <button type="button" className="secondary" onClick={printLetter}>
               Print / PDF
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={useForInterviews}
+              disabled={!company.trim()}
+            >
+              <Building2 size={16} aria-hidden="true" />
+              Interview prep
             </button>
           </div>
         </section>

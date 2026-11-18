@@ -59,6 +59,7 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [coverPrefill, setCoverPrefill] = useState(null);
+  const [companyPrefill, setCompanyPrefill] = useState(null);
 
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -77,6 +78,7 @@ export default function App() {
     setDescription("");
     setRequiredSkillText("");
     setCoverPrefill(null);
+    setCompanyPrefill(null);
     setPage("jobs");
   }, []);
 
@@ -368,6 +370,32 @@ export default function App() {
     setPage("cover");
   } // end writeCoverLetter
 
+  function openCompanyFromCover(draft) {
+    setCoverPrefill(draft);
+    setCompanyPrefill({
+      company: draft.company,
+      website: "",
+      notes: "",
+      jobTitle: draft.role,
+      jobDescription: draft.jobDescription,
+      profile: draft.profile,
+      notice: "Company and job info carried over from your cover letter."
+    });
+    setPage("company");
+  } // end openCompanyFromCover
+
+  function backToCoverFromCompany(draft) {
+    setCoverPrefill((current) => ({
+      ...(current || {}),
+      company: current?.company || draft.company,
+      role: current?.role || draft.role,
+      jobDescription: current?.jobDescription || draft.jobDescription,
+      profile: current?.profile || draft.profile,
+      notice: draft.notice
+    }));
+    setPage("cover");
+  } // end backToCoverFromCompany
+
   if (!auth) {
     return (
       <LoginPage
@@ -490,6 +518,7 @@ export default function App() {
           }
           prefill={coverPrefill}
           onPrefillApplied={() => setCoverPrefill(null)}
+          onUseForInterviews={openCompanyFromCover}
         />
       )}
 
@@ -502,6 +531,9 @@ export default function App() {
           onResumeTextChange={(text) =>
             setResumeTextByTrack((current) => ({ ...current, [track]: text }))
           }
+          prefill={companyPrefill}
+          onPrefillApplied={() => setCompanyPrefill(null)}
+          onBackToCover={backToCoverFromCompany}
         />
       )}
 

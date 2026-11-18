@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Building2, Copy, Printer, Trash2 } from "lucide-react";
+import { Building2, Copy, PenLine, Printer, Trash2 } from "lucide-react";
 
 import { DEFAULT_PROFILE } from "../profileDefaults.js";
 import { starterTextFor } from "../resumeStarters.js";
@@ -29,16 +29,24 @@ export default function CompanyView({
   trackLabel,
   request,
   resumeText,
-  onResumeTextChange
+  onResumeTextChange,
+  prefill,
+  onPrefillApplied,
+  onBackToCover
 }) {
   const [profiles, setProfiles] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [company, setCompany] = useState("");
-  const [website, setWebsite] = useState("");
-  const [notes, setNotes] = useState("");
-  const [jobTitle, setJobTitle] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
-  const [profile, setProfile] = useState({ ...DEFAULT_PROFILE });
+  const [company, setCompany] = useState(() => prefill?.company || "");
+  const [website, setWebsite] = useState(() => prefill?.website || "");
+  const [notes, setNotes] = useState(() => prefill?.notes || "");
+  const [jobTitle, setJobTitle] = useState(() => prefill?.jobTitle || "");
+  const [jobDescription, setJobDescription] = useState(
+    () => prefill?.jobDescription || ""
+  );
+  const [profile, setProfile] = useState(() => ({
+    ...DEFAULT_PROFILE,
+    ...(prefill?.profile || {})
+  }));
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [answers, setAnswers] = useState([]);
@@ -47,13 +55,21 @@ export default function CompanyView({
   const [generatingAnswer, setGeneratingAnswer] = useState(false);
   const [generatingInterview, setGeneratingInterview] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(() => prefill?.notice || "");
 
   const requestRef = useRef(request);
+  const prefillRef = useRef(prefill);
 
   useEffect(() => {
     requestRef.current = request;
   }); // end keep request ref current
+
+  useEffect(() => {
+    if (!prefill) return;
+
+    prefillRef.current = prefill;
+    onPrefillApplied?.();
+  }, [prefill, onPrefillApplied]); // end consume prefill after keeping a copy
 
   useEffect(() => {
     let active = true;
@@ -62,7 +78,44 @@ export default function CompanyView({
       .current("/api/companies")
       .then((data) => {
         if (!active) return;
-        setProfiles(Array.isArray(data.profiles) ? data.profiles : []);
+
+        const items = Array.isArray(data.profiles) ? data.profiles : [];
+        setProfiles(items);
+
+        const incoming = prefillRef.current;
+        const name = String(incoming?.company || "")
+          .trim()
+          .toLowerCase();
+
+        if (!name) return;
+
+        const match = items.find(
+          (item) =>
+            String(item.company || "").trim().toLowerCase() === name
+        ); // end find saved company
+
+        if (!match) {
+          setNotice(
+            incoming.notice || "Company info carried over from your cover letter."
+          );
+          return;
+        } // end if no saved match
+
+        openProfile(match);
+
+        if (!match.jobTitle && incoming.jobTitle) setJobTitle(incoming.jobTitle);
+
+        if (!match.notes && (incoming.notes || incoming.jobDescription)) {
+          setNotes(incoming.notes || incoming.jobDescription);
+        } // end fill empty company notes
+
+        if (!match.jobDescription && incoming.jobDescription) {
+          setJobDescription(incoming.jobDescription);
+        } // end fill empty job description
+
+        setNotice(
+          `Opened saved info for ${match.company}. Empty fields were filled from your cover letter.`
+        );
       })
       .catch((err) => {
         if (active) setError(err.message);
@@ -105,6 +158,16 @@ export default function CompanyView({
     setQuestion("");
     clearMessages();
   } // end newCompany
+
+  function backToCover() {
+    onBackToCover?.({
+      company: company.trim(),
+      role: jobTitle.trim(),
+      jobDescription: jobDescription || notes,
+      profile: { ...profile },
+      notice: "Company info carried over from interview prep."
+    });
+  } // end backToCover
 
   function updateProfile(field, value) {
     setProfile((current) => ({ ...current, [field]: value }));
@@ -321,9 +384,11 @@ export default function CompanyView({
       </h2>
       <p>
         Save what you know about a company, then generate answers to application
-        questions and likely interview questions from that information. The AI
-        only uses what you enter — it does not look up the company or invent
-        experience. Review every answer before sending it.
+        questions and likely interview questions from that information. Company
+        details from a cover letter can be carried into this tab, and you can
+        return to the letter from here. The AI only uses what you enter — it
+        does not look up the company or invent experience. Review every answer
+        before sending it.
       </p>
 
       {error && <p role="alert" className="error">{error}</p>}
@@ -332,9 +397,15 @@ export default function CompanyView({
       <form onSubmit={saveCompany}>
         <div className="company-heading">
           <h3>Saved companies</h3>
-          <button type="button" className="secondary" onClick={newCompany}>
-            New company
-          </button>
+          <div className="cover-actions">
+            <button type="button" className="secondary" onClick={backToCover}>
+              <PenLine size={16} aria-hidden="true" />
+              Back to cover letter
+            </button>
+            <button type="button" className="secondary" onClick={newCompany}>
+              New company
+            </button>
+          </div>
         </div>
 
         {profiles.length > 0 && (

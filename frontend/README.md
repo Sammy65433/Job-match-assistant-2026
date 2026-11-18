@@ -13,8 +13,8 @@ The app opens on a dedicated sign-in screen. Users can create an email/password 
 - **Find jobs:** Choose a career track, search listings, open their original source links, save a listing, and open pre-filled searches on other major boards for manual applications.
 - **Preview a pasted job:** Enter a job found elsewhere and its required skills for a screening estimate.
 - **Resume evidence:** Enter editable resume text and manually reviewed requirements for phrase checks.
-- **Cover letter:** Paste a company/job description, generate a tailored letter with Gemini, edit it, copy or download it, and reopen saved drafts.
-- **Company & interviews:** Save company notes and job details, generate grounded answers to application questions, generate likely interview questions, and print a clean question sheet.
+- **Cover letter:** Paste a company/job description, generate a tailored letter with Gemini, edit it, copy or download it, reopen saved drafts, and carry the company details into interview prep.
+- **Company & interviews:** Save company notes and job details, generate grounded answers to application questions, generate likely interview questions, print a clean question sheet, and send the details back to the cover letter form.
 - **Saved jobs:** Read saved listings, expand descriptions, open application links, check limited keyword overlap, explain the fit, write a cover letter, and manually update application status.
 
 These tabs switch views in `App.jsx`; they are not separate browser URLs.
@@ -34,6 +34,8 @@ The **Find jobs** tab also has a **Search other job boards** section. It builds 
 The **Company & interviews** tab stores a company profile on the signed-in account: company name, website, user-entered research notes, job title, job description, generated application answers, and generated interview questions. The applicant background text comes from the editable **Your background / resume text** field for the selected career track.
 
 Gemini receives only those user-entered fields. The app does not look up the company, scrape a careers page, or add facts that are not in the entered text. Generated answers are saved as editable records under the company and can be copied or deleted. Interview questions are practice prompts only; **Print questions** opens a clean, printer-friendly frame with the company name and the generated list.
+
+**Use for interview prep** in the cover letter view carries the company name, role, company/job description, background text, and contact details into this tab. If a company with the same name is already saved, that profile is opened and only its empty fields are filled from the cover letter. **Back to cover letter** returns the company details without clearing the letter you were editing.
 
 ## Run locally
 

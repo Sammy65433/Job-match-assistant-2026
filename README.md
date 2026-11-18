@@ -23,7 +23,7 @@ I built this app to organize job searches across software engineering, data anal
 - Provides editable career-track skills and limited resume-text phrase and keyword-overlap checks.
 - Explains a listing's fit score in plain language with Google Gemini, including which skills are supported and which gaps to address.
 - Generates tailored cover letters from a pasted company/job description and saves editable drafts to each account.
-- Lets users save company notes and job details, generate application-question answers from only that information, and generate printable interview questions for practice.
+- Lets users save company notes and job details, generate application-question answers from only that information, generate printable interview questions for practice, and move company details between the cover letter and interview views without retyping them.
 - Builds direct search links for LinkedIn, Indeed, ZipRecruiter, Glassdoor, Lensa, Dice, Monster, and Google Jobs from editable keywords and the current work type/area, so searches can be run on those boards without APIs and applications can be completed manually.
 - Offers six views: **Find jobs**, **Preview a pasted job**, **Resume evidence**, **Cover letter**, **Company & interviews**, and **Saved jobs**.
 
