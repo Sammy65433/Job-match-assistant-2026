@@ -10,7 +10,7 @@ The app opens on a dedicated sign-in screen. Users can create an email/password 
 
 ## App tabs
 
-- **Find jobs:** Choose a career track, search listings, open their original source links, and save a listing.
+- **Find jobs:** Choose a career track, search listings, open their original source links, save a listing, and open pre-filled searches on other major boards for manual applications.
 - **Preview a pasted job:** Enter a job found elsewhere and its required skills for a screening estimate.
 - **Resume evidence:** Enter editable resume text and manually reviewed requirements for phrase checks.
 - **Cover letter:** Paste a company/job description, generate a tailored letter with Gemini, edit it, copy or download it, and reopen saved drafts.
@@ -23,6 +23,10 @@ These tabs switch views in `App.jsx`; they are not separate browser URLs.
 Software, data, AI engineering, and AI solutions listings use the backend's remote and hybrid search, including Remotive, Jobicy, Himalayas, and newer The Muse/company-board integrations. Audio uses the Adzuna Los Angeles/Newark search, plus a Remotive source merged into the remote audio search. The AI solutions developer track shares the software/data remote and hybrid pipelines and filters titles for AI, machine learning, LLM, and prompt-engineering roles. The AI engineer track uses the same pipelines with a narrower engineering/development title filter and a separate skill vocabulary covering RAG, embeddings, vector databases, model evaluation, MLOps, and deployment. A backend in-person software/data route has been added; do not claim an in-person frontend control works until it is connected and tested.
 
 “Entry-level” and location labels are screening hints. A title without a level may still require years of experience. Search results are **not verified resume matches**.
+
+## Other job boards (no API)
+
+The **Find jobs** tab also has a **Search other job boards** section. It builds ordinary search URLs for LinkedIn, Indeed, ZipRecruiter, Glassdoor, Lensa, Dice, Monster, and Google Jobs from editable keywords and the current work type/area. The URLs are constructed client-side with `new URL()` in `src/externalBoards.js`; each link opens in a new tab with `rel="noopener noreferrer"`. Nothing is scraped, no API key is used, and no listings are imported or scored from these boards. Lensa has no reliable keyword/location URL, so its card opens the site and offers a **Copy search terms** button instead. Applications are completed manually on each board.
 
 ## Run locally
 
@@ -53,6 +57,8 @@ Cover letters and fit explanations also need `GEMINI_API_KEY` in the backend env
 | `src/JobAuth.jsx` | Email/password and Google sign-in controls |
 | `src/api.js` | Frontend API requests and app-token header |
 | `src/JobSearchForm.jsx` | Search form |
+| `src/ExternalJobBoards.jsx` | Editable external-board search links and copy helper |
+| `src/externalBoards.js` | Builds safe outbound search URLs from keywords/location/work type |
 | `src/RemoteJobs.jsx` | Remote software/data listings and source attribution |
 | `src/AudioJobs.jsx` | Adzuna audio listings |
 | `src/SaveListingButton.jsx` | Save discovered listings |
@@ -67,6 +73,7 @@ Cover letters and fit explanations also need `GEMINI_API_KEY` in the backend env
 ## Limitations
 
 - The app does not submit applications or send resumes. “Applied” is a manual status.
+- External-board links open the board's own search; their listings are not imported, scored, or saved in this app.
 - Editable skills do not filter discovered listings yet.
 - Real-listing salary filtering is not implemented.
 - Some job sources provide incomplete descriptions. Keyword overlap does not establish qualification.

@@ -23,9 +23,27 @@ I built this app to organize job searches across software engineering, data anal
 - Provides editable career-track skills and limited resume-text phrase and keyword-overlap checks.
 - Explains a listing's fit score in plain language with Google Gemini, including which skills are supported and which gaps to address.
 - Generates tailored cover letters from a pasted company/job description and saves editable drafts to each account.
+- Builds direct search links for LinkedIn, Indeed, ZipRecruiter, Glassdoor, Lensa, Dice, Monster, and Google Jobs from editable keywords and the current work type/area, so searches can be run on those boards without APIs and applications can be completed manually.
 - Offers five views: **Find jobs**, **Preview a pasted job**, **Resume evidence**, **Cover letter**, and **Saved jobs**.
 
 The app does **not** submit applications, send resumes, or decide whether someone qualifies for a role.
+
+## External board search links
+
+The **Find jobs** view includes an **Search other job boards** section. It turns editable keywords (defaulting to the selected career track) plus the current work type and area into ordinary search URLs:
+
+| Board | What the link does |
+| --- | --- |
+| LinkedIn | Opens `/jobs/search/` with `keywords`, `location`, and the `f_WT` workplace filter |
+| Indeed | Opens `/jobs` with `q` and `l` |
+| ZipRecruiter | Opens `/jobs-search` with `search`, `location`, and `refine_by_location_type` |
+| Glassdoor | Opens `/Job/jobs.htm` with `sc.keyword`; set the location on the site |
+| Lensa | Opens the Lensa homepage with a **Copy search terms** helper, because a reliable keyword/location URL was not available |
+| Dice | Opens `/jobs` with `q` and `location` |
+| Monster | Opens `/jobs/search` with `q` and `where` |
+| Google Jobs | Opens a Google Jobs results search for the same terms |
+
+These are plain `<a>` links with `target="_blank" rel="noopener noreferrer"`. They are built entirely in the browser (`frontend/src/externalBoards.js`) using `new URL()` and `URLSearchParams`. No scraping, no hidden API calls, no credentials, and no listing data are exchanged with the app. Each board controls its own results, sign-in prompts, and application flow; jobs found there are not added to **Saved jobs** automatically. Use **Preview a pasted job** if you want to score and save one manually.
 
 ## Architecture
 

@@ -228,6 +228,92 @@
   vertical-align: middle;
 } /* end job icons */
 
+/* ---------- External job board links ---------- */
+.page .external-boards {
+  display: grid;
+  gap: 13px;
+  margin: 20px 0;
+  padding: clamp(18px, 3vw, 26px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+} /* end external boards card */
+
+.page .external-boards .group-title {
+  margin: 0;
+} /* end external boards title */
+
+.page .external-intro,
+.page .external-meta,
+.page .external-footnote,
+.page .board-note {
+  color: var(--muted);
+  font-size: 0.9rem;
+} /* end external helper text */
+
+.page .external-keywords-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+} /* end keyword row */
+
+.page .external-keywords-row input {
+  flex: 1 1 260px;
+} /* end keyword input */
+
+.page .board-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+} /* end board grid */
+
+.page .board-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--field);
+  transition: transform 0.2s ease;
+} /* end board card */
+
+.page .board-card:hover {
+  transform: translateY(-2px);
+} /* end board card hover */
+
+.page .board-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 8px 22px rgba(8, 145, 178, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+} /* end board link */
+
+.page .board-link:hover {
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.35);
+} /* end board link hover */
+
+.page .board-card button {
+  padding: 7px 12px;
+  font-size: 0.8rem;
+} /* end board card button */
+
 .page details {
   color: var(--muted);
 } /* end details */

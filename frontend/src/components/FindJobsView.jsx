@@ -1,3 +1,4 @@
+import ExternalJobBoards from "../ExternalJobBoards.jsx";
 import JobResults from "../JobResults.jsx";
 import JobSearchForm from "../JobSearchForm.jsx";
 
@@ -35,6 +36,13 @@ export default function FindJobsView({
         onModeChange={onModeChange}
         onAreaChange={onAreaChange}
         onSubmit={onSubmit}
+      />
+
+      <ExternalJobBoards
+        key={track}
+        track={track}
+        mode={mode}
+        area={area}
       />
 
       <section id="job-results" aria-label="Real job results">
