@@ -5,7 +5,8 @@ import { COMPANY_BOARDS } from "../data/companyBoards.js";
 import { searchAdzunaJobs } from "./adzuna.js";
 import { getJoobleJobs } from "./jooble.js";
 import { runLoaders, statsKey } from "./loaders.js";
-import { titleMatchesTrack, SENIOR_TITLE, ENTRY_TITLE } from "./discover.js";
+import { titleMatchesTrack, SENIOR_TITLE } from "./discover.js";
+import { isExplicitEntryLevel } from "./titles.js";
 import { repairText } from "./text.js";
 import { detectWorkMode } from "./workMode.js";
 import { CACHE_TTL_MS } from "./config.js";
@@ -31,7 +32,7 @@ const AREAS = {
 
 const ADZUNA_QUERY = {
   software: "software developer",
-  data: "data analyst",
+  data: "data analyst entry level",
   ai: "machine learning engineer",
   "ai-engineer": "ai engineer"
 }; // end ADZUNA_QUERY
@@ -59,7 +60,7 @@ function classifyJob(job, track) {
     title,
     workMode: detectWorkMode(fixed),
     levelGroup:
-      fixed.entryLevelListed || ENTRY_TITLE.test(title)
+      fixed.entryLevelListed || isExplicitEntryLevel(title, fixed.description)
         ? "explicit-entry-level"
         : "level-unspecified"
   };

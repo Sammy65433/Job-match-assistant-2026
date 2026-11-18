@@ -63,7 +63,10 @@ function byScore(list) {
 function MatchLine({ job }) {
   if (!hasScore(job)) {
     return (
-      <p>Fit score: not enough skill keywords in the listing text.</p>
+      <p>
+        Not rated — fewer than 3 recognized skill phrases in the available
+        listing text. Open the listing to review requirements.
+      </p>
     );
   } // end if no score
 
@@ -71,7 +74,10 @@ function MatchLine({ job }) {
 
   if (!fit) {
     return (
-      <p>Fit score: not enough skill keywords in the listing text.</p>
+      <p>
+        Not rated — fewer than 3 recognized skill phrases in the available
+        listing text. Open the listing to review requirements.
+      </p>
     );
   } // end if score out of range
 
@@ -213,7 +219,7 @@ export default function JobResults({
           {
             id: "entry",
             title: "Explicitly entry-level titles",
-            note: "These titles mention junior, entry-level, associate, graduate, or new grad. Check the full listing.",
+            note: "These listings explicitly mention junior, entry-level, associate, graduate, new grad, early career, intern, or apprentice. Check the full listing.",
             jobs: jobs.filter((job) => job.levelGroup === "explicit-entry-level")
           },
           {

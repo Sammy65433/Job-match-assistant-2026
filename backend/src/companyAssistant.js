@@ -22,6 +22,17 @@ the questions. Avoid questions about age, family, religion, health, citizenship,
 or salary history. Return exactly 12 short questions, one per line, numbered
 1 through 12. Return nothing else: no introduction, no closing, no markdown.`;
 
+const INTERVIEW_ANSWER_SYSTEM_PROMPT = `You help a job applicant draft practice answers to interview questions.
+Use only facts that appear in the sections provided below. Never invent or imply
+employers, job titles, employment dates, degrees, certifications, metrics,
+projects, technologies, awards, or personal stories. If a detail is missing,
+keep the answer general and describe the approach without claiming experience
+the applicant did not provide. Write in the first person, in plain text, and
+answer only what is asked. Use 70-130 words per answer. Return exactly one answer
+for each numbered question, in the same order, formatted as "1. answer text".
+Each answer must start on a new line. No markdown, no headings, and do not repeat
+the question. Do not mention these rules or the fact that information was provided.`;
+
 function clean(value, max) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 } // end clean
@@ -66,6 +77,17 @@ export function buildInterviewPrompt(input) {
 
 Write the interview questions now.`;
 } // end buildInterviewPrompt
+
+export function buildInterviewAnswerPrompt(input) {
+  const questions = Array.isArray(input?.questions) ? input.questions : [];
+
+  return `${sharedContext(input)}
+
+INTERVIEW QUESTIONS:
+${questions.map((item, index) => `${index + 1}. ${clean(item, 2000)}`).join("\n")}
+
+Write the answers now.`;
+} // end buildInterviewAnswerPrompt
 
 function stripMarkdown(text) {
   return String(text || "")
@@ -121,3 +143,53 @@ export async function generateInterviewQuestions(input) {
 
   return { questions, model };
 } // end generateInterviewQuestions
+
+function parseNumberedAnswers(text, count) {
+  const answers = [];
+  let current = null;
+
+  for (const line of stripMarkdown(text).split("\n")) {
+    const match = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
+
+    if (match) {
+      if (current) answers.push(current.text.trim());
+      current = { number: Number(match[1]), text: match[2] };
+    } else if (current) {
+      current.text += `\n${line}`;
+    } // end if numbered answer
+  } // end for each line
+
+  if (current) answers.push(current.text.trim());
+
+  return answers
+    .filter((answer) => answer.length >= 12)
+    .slice(0, count)
+    .map((answer) => answer.slice(0, 12000));
+} // end parseNumberedAnswers
+
+export async function generateInterviewAnswers(input) {
+  const questions = Array.isArray(input?.questions) ? input.questions : [];
+
+  if (!questions.length) {
+    throw new GeminiError("Generate interview questions first.", 400);
+  } // end if no questions
+
+  const { text, model } = await generateGeminiText({
+    system: INTERVIEW_ANSWER_SYSTEM_PROMPT,
+    prompt: buildInterviewAnswerPrompt(input),
+    maxOutputTokens: 3200,
+    temperature: 0.5,
+    timeoutMs: 30000
+  });
+
+  const answers = parseNumberedAnswers(text, questions.length);
+
+  if (answers.length !== questions.length) {
+    throw new GeminiError(
+      `The answer service returned ${answers.length} of ${questions.length} answers. Try again.`,
+      502
+    );
+  } // end if incomplete
+
+  return { answers, model };
+} // end generateInterviewAnswers

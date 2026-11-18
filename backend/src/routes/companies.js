@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import CompanyProfile from "../models/CompanyProfile.js";
 import {
   generateApplicationAnswer,
+  generateInterviewAnswers,
   generateInterviewQuestions
 } from "../companyAssistant.js";
 import { requireJobUser } from "../middleware/requireJobUser.js";
@@ -61,6 +62,14 @@ function publicProfile(profile) {
     interview: {
       questions: Array.isArray(value.interview?.questions)
         ? value.interview.questions
+        : [],
+      answers: Array.isArray(value.interview?.answers)
+        ? value.interview.answers.map((entry) => ({
+            question: entry.question,
+            answer: entry.answer,
+            model: entry.model || "",
+            createdAt: entry.createdAt
+          }))
         : [],
       model: value.interview?.model || "",
       generatedAt: value.interview?.generatedAt || null
@@ -263,6 +272,94 @@ router.post("/:id/interview-questions", aiLimiter, async (req, res) => {
     });
   } catch (error) {
     return serverError(res, "Interview question generation failed", error);
+  } // end try/catch
+});
+
+router.post("/:id/interview-answers", aiLimiter, async (req, res) => {
+  try {
+    const profile = await findOwned(req.params.id, req.jobUser.id);
+
+    if (!profile) return notFound(res);
+
+    const questions = Array.isArray(profile.interview?.questions)
+      ? profile.interview.questions
+      : [];
+
+    if (!questions.length) {
+      return res.status(400).json({ error: "Generate interview questions first." });
+    } // end if no questions
+
+    const { answers, model } = await generateInterviewAnswers({
+      ...profileFields(profile),
+      questions,
+      resumeText: clean(req.body?.resumeText, 20000),
+      profile: sanitizeProfile(req.body?.profile)
+    });
+
+    profile.interview.answers = questions.map((question, index) => ({
+      question,
+      answer: answers[index],
+      model
+    }));
+    await profile.save();
+
+    return res.status(201).json({
+      interview: publicProfile(profile).interview
+    });
+  } catch (error) {
+    return serverError(res, "Interview answer generation failed", error);
+  } // end try/catch
+});
+
+router.patch("/:id/interview", async (req, res) => {
+  const rawQuestions = Array.isArray(req.body?.questions)
+    ? req.body.questions
+    : String(req.body?.questions || "").split("\n");
+
+  const questions = [
+    ...new Set(
+      rawQuestions
+        .map((item) => clean(item, 2000))
+        .filter((item) => item.length >= 8)
+    )
+  ].slice(0, 20);
+
+  if (!questions.length) {
+    return res.status(400).json({ error: "Add at least one interview question." });
+  } // end if no questions
+
+  try {
+    const profile = await findOwned(req.params.id, req.jobUser.id);
+
+    if (!profile) return notFound(res);
+
+    const previous = Array.isArray(profile.interview?.answers)
+      ? profile.interview.answers
+      : [];
+
+    const answers = questions
+      .map((question) => {
+        const saved = previous.find((item) => item.question === question);
+
+        return saved
+          ? {
+              question,
+              answer: saved.answer,
+              model: saved.model || "",
+              createdAt: saved.createdAt
+            }
+          : null;
+      })
+      .filter(Boolean);
+
+    profile.interview.questions = questions;
+    profile.interview.answers = answers;
+    profile.interview.generatedAt = new Date();
+    await profile.save();
+
+    return res.json({ interview: publicProfile(profile).interview });
+  } catch (error) {
+    return serverError(res, "Interview question save failed", error);
   } // end try/catch
 });
 

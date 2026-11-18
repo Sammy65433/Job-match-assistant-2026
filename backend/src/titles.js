@@ -2,7 +2,20 @@ export const SENIOR_TITLE =
   /\b(senior|sr\.?|staff|principal|lead|head|director|manager|architect|vp|vice president|chief)\b/i;
 
 export const ENTRY_TITLE =
-  /\b(junior|jr\.?|entry[\s-]?level|associate|graduate|new grad)\b/i;
+  /\b(junior|jr\.?|entry[\s-]?level|associate|graduate|new grad(?:uate)?s?|early[\s-]?career|intern(?:ship)?|apprentice(?:ship)?|0\s*[-–]\s*2 years?)\b/i;
+
+/* Descriptive text is checked separately with stricter phrases so a mention
+ * of an "associate degree" or "graduate program" is not read as a job level.
+ */
+const ENTRY_DESCRIPTION =
+  /\b(entry[\s-]?level|new grad(?:uate)?s?|early[\s-]?career|0\s*[-–]\s*2 years?(?: of)? experience|junior (?:role|position|engineer|analyst|developer)|internship|apprenticeship)\b/i;
+
+export function isExplicitEntryLevel(title, description = "") {
+  return (
+    ENTRY_TITLE.test(String(title || "")) ||
+    ENTRY_DESCRIPTION.test(String(description || ""))
+  );
+} // end isExplicitEntryLevel
 
 /* ---------- AI track title rules ----------
  * Requiring an AI topic plus a technical role keeps sales, training,

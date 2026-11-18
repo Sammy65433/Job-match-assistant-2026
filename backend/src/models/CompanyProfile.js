@@ -11,9 +11,19 @@ const answerSchema = new Schema(
   { timestamps: true }
 );
 
+const interviewAnswerSchema = new Schema(
+  {
+    question: { type: String, required: true, trim: true, maxlength: 2000 },
+    answer: { type: String, required: true, trim: true, maxlength: 12000 },
+    model: { type: String, default: "", trim: true, maxlength: 80 }
+  },
+  { timestamps: true }
+);
+
 const interviewSchema = new Schema(
   {
     questions: { type: [String], default: [] },
+    answers: { type: [interviewAnswerSchema], default: [] },
     model: { type: String, default: "", trim: true, maxlength: 80 },
     generatedAt: { type: Date, default: null }
   },

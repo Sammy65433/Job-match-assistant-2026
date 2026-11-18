@@ -14,16 +14,16 @@ The app opens on a dedicated sign-in screen. Users can create an email/password 
 - **Preview a pasted job:** Enter a job found elsewhere and its required skills for a screening estimate.
 - **Resume evidence:** Enter editable resume text and manually reviewed requirements for phrase checks.
 - **Cover letter:** Paste a company/job description, generate a tailored letter with Gemini, edit it, copy or download it, reopen saved drafts, and carry the company details into interview prep.
-- **Company & interviews:** Save company notes and job details, generate grounded answers to application questions, generate likely interview questions, print a clean question sheet, and send the details back to the cover letter form.
+- **Company & interviews:** Save company notes and job details, generate grounded answers to application questions, generate likely interview questions and practice answers, edit and save the question list, print or download the Q&A, and send the details back to the cover letter form.
 - **Saved jobs:** Read saved listings, expand descriptions, open application links, check limited keyword overlap, explain the fit, write a cover letter, and manually update application status.
 
 These tabs switch views in `App.jsx`; they are not separate browser URLs.
 
 ## Job discovery
 
-Software, data, AI engineering, and AI solutions listings use the backend's remote and hybrid search, including Remotive, Jobicy, Himalayas, and newer The Muse/company-board integrations. Audio uses the Adzuna Los Angeles/Newark search, plus a Remotive source merged into the remote audio search. The AI solutions developer track shares the software/data remote and hybrid pipelines and filters titles for AI, machine learning, LLM, and prompt-engineering roles. The AI engineer track uses the same pipelines with a narrower engineering/development title filter and a separate skill vocabulary covering RAG, embeddings, vector databases, model evaluation, MLOps, and deployment. A backend in-person software/data route has been added; do not claim an in-person frontend control works until it is connected and tested.
+Software, data, AI engineering, and AI solutions listings use the backend's remote and hybrid search, including Remotive, Jobicy, Himalayas, and newer The Muse/company-board integrations. Audio uses the Adzuna Los Angeles/Newark search, plus a Remotive source merged into the remote audio search. Remotive descriptions are carried into audio scoring, so ratings use the same title-and-text skill overlap as other tracks; listings with fewer than three recognized skill phrases show **Not rated**. The AI solutions developer track shares the software/data remote and hybrid pipelines and filters titles for AI, machine learning, LLM, and prompt-engineering roles. The AI engineer track uses the same pipelines with a narrower engineering/development title filter and a separate skill vocabulary covering RAG, embeddings, vector databases, model evaluation, MLOps, and deployment. Configured keyword searches for the data analyst track include “entry level,” and explicit new-grad/early-career titles and descriptions are surfaced first. A backend in-person software/data route has been added; do not claim an in-person frontend control works until it is connected and tested.
 
-“Entry-level” and location labels are screening hints. A title without a level may still require years of experience. Search results are **not verified resume matches**.
+“Entry-level” and location labels are screening hints. A title without a level may still require years of experience; it is kept in a separate “Level unspecified” group. Search results are **not verified resume matches**.
 
 ## Other job boards (no API)
 
@@ -31,9 +31,11 @@ The **Find jobs** tab also has a **Search other job boards** section. It builds 
 
 ## Company & interviews
 
-The **Company & interviews** tab stores a company profile on the signed-in account: company name, website, user-entered research notes, job title, job description, generated application answers, and generated interview questions. The applicant background text comes from the editable **Your background / resume text** field for the selected career track.
+The **Company & interviews** tab stores a company profile on the signed-in account: company name, website, user-entered research notes, job title, job description, generated application answers, and generated interview questions and answers. The applicant background text comes from the editable **Your background / resume text** field for the selected career track.
 
-Gemini receives only those user-entered fields. The app does not look up the company, scrape a careers page, or add facts that are not in the entered text. Generated answers are saved as editable records under the company and can be copied or deleted. Interview questions are practice prompts only; **Print questions** opens a clean, printer-friendly frame with the company name and the generated list.
+Gemini receives only those user-entered fields. The app does not look up the company, scrape a careers page, or add facts that are not in the entered text. Generated answers are saved as editable records under the company and can be copied or deleted. Interview questions and their practice answers are saved with the company, and the question list can be edited or extended from the **Edit or add questions** box. **Save questions to this company** persists changes; answers for unchanged questions are kept.
+
+Interview content is practice material, not guaranteed. **Print / Save PDF** opens a clean print frame with the company name, questions, and answers that can be saved as a PDF from the browser. **Download .txt** creates a plain-text Q&A file.
 
 **Use for interview prep** in the cover letter view carries the company name, role, company/job description, background text, and contact details into this tab. If a company with the same name is already saved, that profile is opened and only its empty fields are filled from the cover letter. **Back to cover letter** returns the company details without clearing the letter you were editing.
 
@@ -89,7 +91,7 @@ Cover letters, fit explanations, company answers, and interview questions need `
 - Real-listing salary filtering is not implemented.
 - Some job sources provide incomplete descriptions. Keyword overlap does not establish qualification.
 - Resume text is sent to the backend for checks, but those checks do not save it as a profile.
-- AI-generated cover letters, fit explanations, application answers, and interview questions can be incomplete or wrong. They use only the text provided, but every claim still needs review.
+- AI-generated cover letters, fit explanations, application answers, interview questions, and interview answers can be incomplete or wrong. They use only the text provided, but every claim still needs review.
 - Cover-letter drafts store the pasted job text and background text used to generate them; delete drafts you no longer need.
 - Company profiles store user-entered notes, job text, generated answers, and generated interview questions on the account; delete a company or individual answer when it is no longer needed.
 - Printed interview questions are practice prompts, not questions guaranteed by the employer.

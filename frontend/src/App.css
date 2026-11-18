@@ -875,6 +875,32 @@
   background: rgba(167, 139, 250, 0.07);
 } /* end interview question */
 
+.page .interview-question {
+  color: #fff;
+  font-weight: 600;
+} /* end interview question text */
+
+.page .interview-answer {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--cyan);
+  border-radius: 8px;
+  background: rgba(34, 211, 238, 0.07);
+} /* end interview answer */
+
+.page .interview-answer strong {
+  color: var(--cyan);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+} /* end interview answer label */
+
+.page .interview-answer p {
+  white-space: pre-line;
+} /* end interview answer text */
+
 /* ---------- AI fit explainer ---------- */
 .page .fit-explainer {
   display: grid;

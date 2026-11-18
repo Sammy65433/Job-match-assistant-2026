@@ -68,7 +68,7 @@ data: {
 audio: {
   label: "Audio engineer",
   modes: ["remote", "hybrid", "in-person"],
-  defaultSkills: "Pro Tools, Logic Pro, Ableton Live, audio recording, vocal tracking, audio editing, vocal production, microphone placement, signal flow, studio sessions, session file organization",
+  defaultSkills: "Pro Tools, Logic Pro, Ableton Live, audio engineering, audio recording, audio editing, vocal tracking, vocal production, vocal tuning, mixing, mastering, sound design, live sound, signal flow, microphone placement, EQ, compression, reverb, delay, music production, composition, studio sessions, session file organization",
 },
 ai: {
   label: "AI solutions developer",

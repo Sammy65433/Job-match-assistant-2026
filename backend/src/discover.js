@@ -17,7 +17,13 @@ import { getReedJobs } from "./reed.js";
 import { getFindworkJobs } from "./findwork.js";
 import { CACHE_TTL_MS } from "./config.js";
 import { repairText } from "./text.js";
-import { ENTRY_TITLE, SENIOR_TITLE, isAiTitle, isAiEngineerTitle } from "./titles.js";
+import {
+  ENTRY_TITLE,
+  SENIOR_TITLE,
+  isAiTitle,
+  isAiEngineerTitle,
+  isExplicitEntryLevel
+} from "./titles.js";
 
 export { ENTRY_TITLE, SENIOR_TITLE };
 
@@ -109,7 +115,7 @@ function classifyJob(job, track) {
     ...fixed,
     title,
     levelGroup:
-      fixed.entryLevelListed || ENTRY_TITLE.test(title)
+      fixed.entryLevelListed || isExplicitEntryLevel(title, fixed.description)
         ? "explicit-entry-level"
         : "level-unspecified",
     locationGroup

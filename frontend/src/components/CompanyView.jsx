@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Building2, Copy, PenLine, Printer, Trash2 } from "lucide-react";
+import { Building2, Copy, Download, PenLine, Printer, Trash2 } from "lucide-react";
 
 import { DEFAULT_PROFILE } from "../profileDefaults.js";
 import { starterTextFor } from "../resumeStarters.js";
@@ -11,6 +11,15 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 } // end escapeHtml
+
+function safeName(value) {
+  return (
+    String(value || "")
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 80) || "company"
+  );
+} // end safeName
 
 function formatDate(value) {
   if (!value) return "";
@@ -51,6 +60,9 @@ export default function CompanyView({
   const [answer, setAnswer] = useState("");
   const [answers, setAnswers] = useState([]);
   const [interview, setInterview] = useState(null);
+  const [interviewQuestionsInput, setInterviewQuestionsInput] = useState("");
+  const [interviewQuestionsInputKey, setInterviewQuestionsInputKey] =
+    useState("");
   const [saving, setSaving] = useState(false);
   const [generatingAnswer, setGeneratingAnswer] = useState(false);
   const [generatingInterview, setGeneratingInterview] = useState(false);
@@ -59,6 +71,16 @@ export default function CompanyView({
 
   const requestRef = useRef(request);
   const prefillRef = useRef(prefill);
+
+  const interviewQuestions = Array.isArray(interview?.questions)
+    ? interview.questions
+    : [];
+  const interviewQuestionsKey = interviewQuestions.join("\n");
+
+  if (interviewQuestionsKey !== interviewQuestionsInputKey) {
+    setInterviewQuestionsInputKey(interviewQuestionsKey);
+    setInterviewQuestionsInput(interviewQuestionsKey);
+  } // end sync editable question list
 
   useEffect(() => {
     requestRef.current = request;
@@ -286,13 +308,96 @@ export default function CompanyView({
       );
 
       setInterview(data.interview);
-      setNotice("Interview questions generated and saved.");
+      setNotice("Interview questions generated. Writing answers...");
+
+      try {
+        const answerData = await requestRef.current(
+          `/api/companies/${encodeURIComponent(saved._id)}/interview-answers`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ resumeText, profile })
+          }
+        );
+
+        setInterview(answerData.interview);
+        setNotice("Interview questions and answers generated and saved.");
+      } catch (answerErr) {
+        setNotice("");
+        setError(
+          `Questions saved, but answers could not be generated. ${answerErr.message}`
+        );
+      } // end try/catch for answers
     } catch (err) {
       setError(err.message);
     } finally {
       setGeneratingInterview(false);
     } // end try/catch
   } // end generateInterview
+
+  async function generateAnswersOnly() {
+    if (!selectedId) {
+      setError("Generate interview questions first.");
+      return;
+    } // end if no saved profile
+
+    clearMessages();
+    setGeneratingInterview(true);
+
+    try {
+      const { id } = await persistQuestions();
+      const data = await requestRef.current(
+        `/api/companies/${encodeURIComponent(id)}/interview-answers`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resumeText, profile })
+        }
+      );
+
+      setInterview(data.interview);
+      setNotice("Interview answers generated and saved.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGeneratingInterview(false);
+    } // end try/catch
+  } // end generateAnswersOnly
+
+  async function persistQuestions() {
+    const questions = interviewQuestionsInput
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (!questions.length) {
+      throw new Error("Add at least one interview question first.");
+    } // end if empty
+
+    const saved = await persist();
+    const data = await requestRef.current(
+      `/api/companies/${encodeURIComponent(saved._id)}/interview`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questions })
+      }
+    );
+
+    setInterview(data.interview);
+    return { id: saved._id, interview: data.interview };
+  } // end persistQuestions
+
+  async function saveQuestions() {
+    clearMessages();
+
+    try {
+      await persistQuestions();
+      setNotice("Questions saved with this company.");
+    } catch (err) {
+      setError(err.message);
+    } // end try/catch
+  } // end saveQuestions
 
   async function deleteAnswer(answerId) {
     if (!selectedId) return;
@@ -345,8 +450,18 @@ export default function CompanyView({
       return;
     } // end if no document
 
-    const title = `${company || "Company"} interview questions`;
-    const items = list.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+    const title = `${company || "Company"} interview Q&A`;
+    const items = list
+      .map((item, index) => {
+        const answer = answerFor(item, index)?.answer || "";
+
+        return `<li><div class="question">${escapeHtml(item)}</div>${
+          answer
+            ? `<div class="answer">${escapeHtml(answer)}</div>`
+            : ""
+        }</li>`;
+      })
+      .join("");
 
     doc.open();
     doc.write(
@@ -357,7 +472,9 @@ export default function CompanyView({
         h1 { font-size: 22px; margin: 0 0 8px; }
         p { color: #4b5563; font-size: 13px; margin: 0 0 24px; }
         ol { padding-left: 26px; }
-        li { margin-bottom: 14px; }
+        li { margin-bottom: 18px; page-break-inside: avoid; }
+        .question { font-weight: bold; }
+        .answer { margin-top: 8px; padding-left: 12px; border-left: 3px solid #d1d5db; color: #374151; white-space: pre-line; }
         @page { margin: 20mm; }
       </style></head><body>
         <h1>${escapeHtml(title)}</h1>
@@ -372,9 +489,57 @@ export default function CompanyView({
     window.setTimeout(() => frame.remove(), 1000);
   } // end printInterview
 
-  const interviewQuestions = Array.isArray(interview?.questions)
-    ? interview.questions
+  function downloadInterview() {
+    if (!interviewQuestions.length) {
+      setError("Generate interview questions first.");
+      return;
+    } // end if empty
+
+    const fileName = `Interview-QA-${safeName(company)}.txt`;
+    const blob = new Blob([interviewText()], {
+      type: "text/plain;charset=utf-8"
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setNotice("Interview Q&A downloaded.");
+  } // end downloadInterview
+
+  const interviewAnswers = Array.isArray(interview?.answers)
+    ? interview.answers
     : [];
+
+  function answerFor(question, index) {
+    return (
+      interviewAnswers.find((item) => item.question === question) ||
+      interviewAnswers[index] ||
+      null
+    );
+  } // end answerFor
+
+  function interviewText() {
+    const lines = [
+      `${company || "Company"} interview questions and answers`,
+      contactSummary(profile),
+      ""
+    ];
+
+    interviewQuestions.forEach((item, index) => {
+      lines.push(`${index + 1}. ${item}`);
+      const answer = answerFor(item, index)?.answer;
+
+      if (answer) lines.push(`Answer: ${answer}`);
+      lines.push("");
+    });
+
+    return lines.join("\n").trim();
+  } // end interviewText
 
   return (
     <section className="company-view" aria-label="Company research and interview prep">
@@ -610,9 +775,10 @@ export default function CompanyView({
       <section className="company-section">
         <h3>Interview prep</h3>
         <p>
-          Generates likely questions from the company info, job description,
-          and background above. Treat them as practice prompts, not guaranteed
-          questions.
+          Generates likely questions and practice answers from the company info,
+          job description, and background above. Questions and answers are saved
+          with this company so you can reopen them later. Treat them as practice
+          prompts, not guaranteed questions.
         </p>
 
         <button
@@ -621,24 +787,54 @@ export default function CompanyView({
           disabled={generatingInterview || !company.trim()}
         >
           {generatingInterview
-            ? "Generating questions..."
-            : "Generate interview questions"}
+            ? "Generating questions and answers..."
+            : "Generate questions & answers"}
         </button>
 
         {interviewQuestions.length > 0 && (
           <>
             <p className="fit-explainer-note">
-              Generated {formatDate(interview?.generatedAt)} · Model:{" "}
+              Saved with {company || "this company"} · Generated{" "}
+              {formatDate(interview?.generatedAt)} · Model:{" "}
               {interview?.model || "unknown"}
             </p>
+
             <ol className="interview-list">
-              {interviewQuestions.map((item, index) => (
-                <li key={`${index}-${item}`}>{item}</li>
-              ))}
+              {interviewQuestions.map((item, index) => {
+                const answer = answerFor(item, index)?.answer;
+
+                return (
+                  <li key={`${index}-${item}`}>
+                    <div className="interview-question">{item}</div>
+                    {answer && (
+                      <div className="interview-answer">
+                        <strong>Answer</strong>
+                        <p>{answer}</p>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
+
             <div className="cover-actions">
               <button type="button" onClick={printInterview}>
-                <Printer size={16} aria-hidden="true" /> Print questions
+                <Printer size={16} aria-hidden="true" /> Print / Save PDF
+              </button>
+              <button type="button" className="secondary" onClick={downloadInterview}>
+                <Download size={16} aria-hidden="true" /> Download .txt
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() =>
+                  copyText(
+                    interviewText(),
+                    "Interview questions and answers copied to the clipboard."
+                  )
+                }
+              >
+                <Copy size={16} aria-hidden="true" /> Copy Q&amp;A
               </button>
               <button
                 type="button"
@@ -653,6 +849,38 @@ export default function CompanyView({
                 }
               >
                 <Copy size={16} aria-hidden="true" /> Copy questions
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={generateAnswersOnly}
+                disabled={generatingInterview}
+              >
+                {generatingInterview
+                  ? "Generating..."
+                  : interviewAnswers.length
+                    ? "Regenerate answers"
+                    : "Generate answers"}
+              </button>
+            </div>
+
+            <label htmlFor="interview-questions-edit">
+              Edit or add questions (one per line)
+            </label>
+            <textarea
+              id="interview-questions-edit"
+              rows={8}
+              value={interviewQuestionsInput}
+              onChange={(event) => setInterviewQuestionsInput(event.target.value)}
+            />
+            <div className="cover-actions">
+              <button
+                type="button"
+                className="secondary"
+                onClick={saveQuestions}
+                disabled={generatingInterview || !interviewQuestionsInput.trim()}
+              >
+                Save questions to this company
               </button>
             </div>
           </>

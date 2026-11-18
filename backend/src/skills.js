@@ -16,10 +16,29 @@ const SKILL_GROUPS = {
     "snowflake", "dbt", "statistics", "sqlite", "pandas", "bigquery"
   ],
   audio: [
-    "pro tools", "logic pro", "ableton live", "ableton", "audio editing",
-    "audio recording", "vocal tracking", "vocal production", "mixing",
-    "mastering", "sound design", "live sound", "signal flow",
-    "microphone placement", "studio sessions", "podcast production"
+    ["pro tools", "protools", "avid pro tools"],
+    ["logic pro", "logic pro x", "logicpro"],
+    ["ableton live", "ableton", "ableton live suite"],
+    ["audio engineering", "audio engineer", "recording engineer", "sound engineer"],
+    ["audio editing", "audio editor", "audio post production", "audio post-production"],
+    ["audio recording", "recording", "record audio", "audio capture"],
+    ["vocal tracking", "vocal recording", "voice tracking", "voice recording"],
+    ["vocal production", "voice production"],
+    ["vocal tuning", "pitch correction", "autotune", "auto-tune"],
+    ["mixing", "audio mixing", "mix engineer", "mixdown", "mix-down"],
+    ["mastering", "audio mastering", "mastering engineer"],
+    ["sound design", "sound designer", "sound effects", "sfx"],
+    ["live sound", "live audio", "front of house", "foh", "monitor engineer"],
+    ["signal flow", "signal chain", "audio routing"],
+    ["microphone placement", "mic placement", "microphone technique", "mic setup"],
+    ["studio sessions", "studio session", "studio recording"],
+    ["podcast production", "podcast editing", "podcasting"],
+    ["digital audio workstation", "daw"],
+    ["music production", "music producer", "composition"],
+    ["eq", "equalization"],
+    ["compression", "audio compression"],
+    ["reverb", "delay"],
+    ["session file organization", "session organization", "session backups"]
   ],
   ai: [
     ["python"],

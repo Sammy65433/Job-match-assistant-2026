@@ -12,7 +12,9 @@ I built this app to organize job searches across software engineering, data anal
 - Optionally adds USAJOBS, Reed, and Findwork when their API keys are configured.
 - Reads company boards from Greenhouse, Lever, Ashby, SmartRecruiters, and Workable.
 - Refreshes all discovery sources automatically every 12 hours by default (`JOB_REFRESH_HOURS`) and shows the last refresh time in the results.
-- Searches audio-related listings near Los Angeles and Newark/NYC through Adzuna.
+- Searches audio-related listings near Los Angeles and Newark/NYC through Adzuna and remote audio listings through Remotive.
+- Computes audio fit ratings from listing text and the user's audio skills, using Remotive descriptions where available; listings without enough recognized skill phrases show **Not rated** instead of a guessed score.
+- Favors explicit new-grad and early-career data analyst results by including early-career terms in configured keyword searches and grouping explicit level language first. Unspecified levels remain separate.
 - Includes backend work toward location-based software/data/AI searches and company job-board sources. These integrations should be verified before presenting them as complete.
 - Screens listings by title, apparent career level, and location text.
 - Lets users save source-linked listings or paste jobs found elsewhere.
@@ -23,7 +25,7 @@ I built this app to organize job searches across software engineering, data anal
 - Provides editable career-track skills and limited resume-text phrase and keyword-overlap checks.
 - Explains a listing's fit score in plain language with Google Gemini, including which skills are supported and which gaps to address.
 - Generates tailored cover letters from a pasted company/job description and saves editable drafts to each account.
-- Lets users save company notes and job details, generate application-question answers from only that information, generate printable interview questions for practice, and move company details between the cover letter and interview views without retyping them.
+- Lets users save company notes and job details, generate application-question answers from only that information, generate interview questions with practice answers, edit and save the question list, print or download the Q&A, and move company details between the cover letter and interview views without retyping them.
 - Builds direct search links for LinkedIn, Indeed, ZipRecruiter, Glassdoor, Lensa, Dice, Monster, and Google Jobs from editable keywords and the current work type/area, so searches can be run on those boards without APIs and applications can be completed manually.
 - Offers six views: **Find jobs**, **Preview a pasted job**, **Resume evidence**, **Cover letter**, **Company & interviews**, and **Saved jobs**.
 
@@ -77,8 +79,8 @@ Optional features call **Google Gemini** from the backend:
 
 - **Explain this fit** sends the listing text, the applicant's skills or resume text, and the computed fit data to Gemini, which explains the score and names honest next steps. It is not saved.
 - **Cover letter** sends the pasted company/job info, background text, tone, and contact details to Gemini. Generated letters are saved as editable drafts in MongoDB, scoped to the signed-in account.
-- **Company & interviews** saves company notes, job details, application answers, and generated interview questions in MongoDB under the signed-in account. It sends only the user-entered company info, job info, background text, and contact details to Gemini. The app does not look up or scrape the company.
-- **Interview questions** are practice prompts generated from that saved information. They are not guaranteed questions and can be printed from a clean print view.
+- **Company & interviews** saves company notes, job details, application answers, interview questions, and practice answers in MongoDB under the signed-in account. It sends only the user-entered company info, job info, background text, and contact details to Gemini. The app does not look up or scrape the company.
+- **Interview questions** are practice prompts generated from that saved information. They are not guaranteed questions. The list can be edited and saved per company, and the Q&A can be printed/saved as a PDF from the browser or downloaded as a text file.
 
 All Gemini features use the backend-only `GEMINI_API_KEY`:
 

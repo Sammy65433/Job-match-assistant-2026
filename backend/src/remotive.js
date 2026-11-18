@@ -1,5 +1,5 @@
 import { CACHE_TTL_MS } from "./config.js";
-import { repairText } from "./text.js";
+import { repairText, stripHtml } from "./text.js";
 import { isAiTitle, isAiEngineerTitle } from "./titles.js";
 
 const REMOTIVE_URL = "https://remotive.com/api/remote-jobs";
@@ -50,6 +50,7 @@ async function fetchJobs() {
       company: repairText(job.company_name),
       category: cleanText(job.category),
       location: repairText(job.candidate_required_location),
+      description: repairText(stripHtml(job.description)),
       url: job.url,
       source: "Remotive"
     }));

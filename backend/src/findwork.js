@@ -4,7 +4,7 @@ const FINDWORK_URL = "https://findwork.dev/api/jobs/";
 
 const KEYWORDS = {
   software: "software engineer",
-  data: "data analyst",
+  data: "data analyst entry level",
   ai: "machine learning engineer",
   "ai-engineer": "ai engineer"
 };

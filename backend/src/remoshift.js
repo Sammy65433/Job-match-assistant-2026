@@ -4,7 +4,7 @@ const REMOSHIFT_URL = "https://remoshift.com/api/v1/jobs.open";
 
 const QUERIES = {
   software: "software engineer",
-  data: "data analyst",
+  data: "data analyst entry level",
   ai: "machine learning engineer",
   "ai-engineer": "ai engineer"
 };
