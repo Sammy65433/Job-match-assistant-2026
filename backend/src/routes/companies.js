@@ -336,30 +336,44 @@ router.patch("/:id/interview", async (req, res) => {
     const previous = Array.isArray(profile.interview?.answers)
       ? profile.interview.answers
       : [];
+    const rawAnswers = Array.isArray(req.body?.answers)
+      ? req.body.answers
+      : [];
+    const submitted = new Map();
+
+    rawAnswers.forEach((entry, index) => {
+      const question = clean(entry?.question ?? questions[index], 2000);
+
+      if (!question) return;
+
+      submitted.set(question, clean(entry?.answer, 12000));
+    }); // end collect edited answers
 
     const answers = questions
       .map((question) => {
         const saved = previous.find((item) => item.question === question);
+        const answer = submitted.has(question)
+          ? submitted.get(question)
+          : saved?.answer || "";
 
-        return saved
-          ? {
-              question,
-              answer: saved.answer,
-              model: saved.model || "",
-              createdAt: saved.createdAt
-            }
-          : null;
+        if (!answer) return null;
+
+        return {
+          question,
+          answer,
+          model: saved?.model || "",
+          createdAt: saved?.createdAt
+        };
       })
       .filter(Boolean);
 
     profile.interview.questions = questions;
     profile.interview.answers = answers;
-    profile.interview.generatedAt = new Date();
     await profile.save();
 
     return res.json({ interview: publicProfile(profile).interview });
   } catch (error) {
-    return serverError(res, "Interview question save failed", error);
+    return serverError(res, "Interview Q&A save failed", error);
   } // end try/catch
 });
 

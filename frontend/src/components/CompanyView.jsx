@@ -63,6 +63,8 @@ export default function CompanyView({
   const [interviewQuestionsInput, setInterviewQuestionsInput] = useState("");
   const [interviewQuestionsInputKey, setInterviewQuestionsInputKey] =
     useState("");
+  const [interviewAnswersInput, setInterviewAnswersInput] = useState([]);
+  const [interviewAnswersInputKey, setInterviewAnswersInputKey] = useState("");
   const [saving, setSaving] = useState(false);
   const [generatingAnswer, setGeneratingAnswer] = useState(false);
   const [generatingInterview, setGeneratingInterview] = useState(false);
@@ -75,12 +77,28 @@ export default function CompanyView({
   const interviewQuestions = Array.isArray(interview?.questions)
     ? interview.questions
     : [];
+  const interviewAnswers = Array.isArray(interview?.answers)
+    ? interview.answers
+    : [];
   const interviewQuestionsKey = interviewQuestions.join("\n");
+  const savedAnswersByIndex = interviewQuestions.map((question, index) => {
+    const saved =
+      interviewAnswers.find((item) => item.question === question) ||
+      interviewAnswers[index];
+
+    return saved?.answer || "";
+  });
+  const interviewAnswersKey = JSON.stringify(savedAnswersByIndex);
 
   if (interviewQuestionsKey !== interviewQuestionsInputKey) {
     setInterviewQuestionsInputKey(interviewQuestionsKey);
     setInterviewQuestionsInput(interviewQuestionsKey);
   } // end sync editable question list
+
+  if (interviewAnswersKey !== interviewAnswersInputKey) {
+    setInterviewAnswersInputKey(interviewAnswersKey);
+    setInterviewAnswersInput(savedAnswersByIndex);
+  } // end sync editable answers
 
   useEffect(() => {
     requestRef.current = request;
@@ -365,10 +383,23 @@ export default function CompanyView({
   } // end generateAnswersOnly
 
   async function persistQuestions() {
-    const questions = interviewQuestionsInput
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean);
+    const questions = [];
+    const answers = [];
+    const seen = new Set();
+
+    interviewQuestionsInput.split("\n").forEach((line, index) => {
+      const question = line.trim().slice(0, 2000);
+
+      if (question.length < 8 || seen.has(question)) return;
+      if (questions.length >= 20) return;
+
+      seen.add(question);
+      questions.push(question);
+      answers.push({
+        question,
+        answer: String(interviewAnswersInput[index] ?? "")
+      });
+    }); // match the backend's cleaned question list
 
     if (!questions.length) {
       throw new Error("Add at least one interview question first.");
@@ -380,7 +411,7 @@ export default function CompanyView({
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questions })
+        body: JSON.stringify({ questions, answers })
       }
     );
 
@@ -393,7 +424,7 @@ export default function CompanyView({
 
     try {
       await persistQuestions();
-      setNotice("Questions saved with this company.");
+      setNotice("Questions and answers saved with this company.");
     } catch (err) {
       setError(err.message);
     } // end try/catch
@@ -453,7 +484,7 @@ export default function CompanyView({
     const title = `${company || "Company"} interview Q&A`;
     const items = list
       .map((item, index) => {
-        const answer = answerFor(item, index)?.answer || "";
+        const answer = currentAnswerFor(index);
 
         return `<li><div class="question">${escapeHtml(item)}</div>${
           answer
@@ -511,17 +542,9 @@ export default function CompanyView({
     setNotice("Interview Q&A downloaded.");
   } // end downloadInterview
 
-  const interviewAnswers = Array.isArray(interview?.answers)
-    ? interview.answers
-    : [];
-
-  function answerFor(question, index) {
-    return (
-      interviewAnswers.find((item) => item.question === question) ||
-      interviewAnswers[index] ||
-      null
-    );
-  } // end answerFor
+  function currentAnswerFor(index) {
+    return String(interviewAnswersInput[index] ?? "").trim();
+  } // end currentAnswerFor
 
   function interviewText() {
     const lines = [
@@ -532,7 +555,7 @@ export default function CompanyView({
 
     interviewQuestions.forEach((item, index) => {
       lines.push(`${index + 1}. ${item}`);
-      const answer = answerFor(item, index)?.answer;
+      const answer = currentAnswerFor(index);
 
       if (answer) lines.push(`Answer: ${answer}`);
       lines.push("");
@@ -794,27 +817,38 @@ export default function CompanyView({
         {interviewQuestions.length > 0 && (
           <>
             <p className="fit-explainer-note">
-              Saved with {company || "this company"} · Generated{" "}
-              {formatDate(interview?.generatedAt)} · Model:{" "}
-              {interview?.model || "unknown"}
+              Saved with {company || "this company"}
+              {interview?.generatedAt
+                ? ` · Generated ${formatDate(interview.generatedAt)}`
+                : " · Saved manually"}
+              {interview?.model ? ` · Model: ${interview.model}` : ""}
             </p>
 
             <ol className="interview-list">
-              {interviewQuestions.map((item, index) => {
-                const answer = answerFor(item, index)?.answer;
-
-                return (
-                  <li key={`${index}-${item}`}>
-                    <div className="interview-question">{item}</div>
-                    {answer && (
-                      <div className="interview-answer">
-                        <strong>Answer</strong>
-                        <p>{answer}</p>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
+              {interviewQuestions.map((item, index) => (
+                <li key={`${index}-${item}`}>
+                  <div className="interview-question">{item}</div>
+                  <div className="interview-answer">
+                    <label htmlFor={`interview-answer-${index}`}>
+                      Answer for question {index + 1} (editable)
+                    </label>
+                    <textarea
+                      id={`interview-answer-${index}`}
+                      rows={6}
+                      maxLength={12000}
+                      placeholder="No answer yet — write one here or use Generate answers."
+                      value={interviewAnswersInput[index] || ""}
+                      onChange={(event) => {
+                        setInterviewAnswersInput((current) => {
+                          const next = [...current];
+                          next[index] = event.target.value;
+                          return next;
+                        });
+                      }}
+                    />
+                  </div>
+                </li>
+              ))}
             </ol>
 
             <div className="cover-actions">
@@ -880,7 +914,7 @@ export default function CompanyView({
                 onClick={saveQuestions}
                 disabled={generatingInterview || !interviewQuestionsInput.trim()}
               >
-                Save questions to this company
+                Save questions &amp; answers to this company
               </button>
             </div>
           </>

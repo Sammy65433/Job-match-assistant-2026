@@ -11,10 +11,10 @@ The app opens on a dedicated sign-in screen. Users can create an email/password 
 ## App tabs
 
 - **Find jobs:** Choose a career track, search listings, open their original source links, save a listing, and open pre-filled searches on other major boards for manual applications.
-- **Preview a pasted job:** Enter a job found elsewhere and its required skills for a screening estimate.
+- **Preview a pasted job:** Enter a job found elsewhere and its required skills for a screening estimate. When you arrive from an external board card, the board is noted as the source; you can also add an optional listing URL and mark the job as already applied before saving.
 - **Resume evidence:** Enter editable resume text and manually reviewed requirements for phrase checks.
 - **Cover letter:** Paste a company/job description, generate a tailored letter with Gemini, edit it, copy or download it, reopen saved drafts, and carry the company details into interview prep.
-- **Company & interviews:** Save company notes and job details, generate grounded answers to application questions, generate likely interview questions and practice answers, edit and save the question list, print or download the Q&A, and send the details back to the cover letter form.
+- **Company & interviews:** Save company notes and job details, generate grounded answers to application questions, generate likely interview questions and practice answers, edit and save the questions and answers together, print or download the Q&A, and send the details back to the cover letter form.
 - **Saved jobs:** Read saved listings, expand descriptions, open application links, check limited keyword overlap, explain the fit, write a cover letter, and manually update application status.
 
 These tabs switch views in `App.jsx`; they are not separate browser URLs.
@@ -27,13 +27,13 @@ Software, data, AI engineering, and AI solutions listings use the backend's remo
 
 ## Other job boards (no API)
 
-The **Find jobs** tab also has a **Search other job boards** section. It builds ordinary search URLs for LinkedIn, Indeed, ZipRecruiter, Glassdoor, Lensa, Dice, Monster, and Google Jobs from editable keywords and the current work type/area. The URLs are constructed client-side with `new URL()` in `src/externalBoards.js`; each link opens in a new tab with `rel="noopener noreferrer"`. Nothing is scraped, no API key is used, and no listings are imported or scored from these boards. Lensa has no reliable keyword/location URL, so its card opens the site and offers a **Copy search terms** button instead. Applications are completed manually on each board.
+The **Find jobs** tab also has a **Search other job boards** section. It builds ordinary search URLs for LinkedIn, Indeed, ZipRecruiter, Glassdoor, Lensa, Dice, Monster, and Google Jobs from editable keywords and the current work type/area. The URLs are constructed client-side with `new URL()` in `src/externalBoards.js`; each link opens in a new tab with `rel="noopener noreferrer"`. Nothing is scraped, no API key is used, and no listings are imported or scored from these boards. Lensa has no reliable keyword/location URL, so its card opens the site and offers a **Copy search terms** button instead. Applications are completed manually on each board. Use **Add a job found here** to enter a listing you found on that board yourself; the board name is saved as the source, and an optional HTTPS listing URL and **I already applied** flag can be included.
 
 ## Company & interviews
 
 The **Company & interviews** tab stores a company profile on the signed-in account: company name, website, user-entered research notes, job title, job description, generated application answers, and generated interview questions and answers. The applicant background text comes from the editable **Your background / resume text** field for the selected career track.
 
-Gemini receives only those user-entered fields. The app does not look up the company, scrape a careers page, or add facts that are not in the entered text. Generated answers are saved as editable records under the company and can be copied or deleted. Interview questions and their practice answers are saved with the company, and the question list can be edited or extended from the **Edit or add questions** box. **Save questions to this company** persists changes; answers for unchanged questions are kept.
+Gemini receives only those user-entered fields. The app does not look up the company, scrape a careers page, or add facts that are not in the entered text. Generated answers are saved as editable records under the company and can be copied or deleted. Interview questions and their practice answers are saved with the company. The question list can be edited or extended from the **Edit or add questions** box, and each answer has its own editable text area. **Save questions & answers to this company** persists both; clearing an answer removes it, while missing answers stay empty rather than being invented.
 
 Interview content is practice material, not guaranteed. **Print / Save PDF** opens a clean print frame with the company name, questions, and answers that can be saved as a PDF from the browser. **Download .txt** creates a plain-text Q&A file.
 

@@ -11,7 +11,7 @@ I built this app to organize job searches across software engineering, data anal
 - Searches remote software, data, AI engineering, and AI solutions listings from Remotive, RemoteOK, Hacker News, Jobicy, Himalayas, The Muse, Arbeitnow, RemoShift, and RemoteJobs.org.
 - Optionally adds USAJOBS, Reed, and Findwork when their API keys are configured.
 - Reads company boards from Greenhouse, Lever, Ashby, SmartRecruiters, and Workable.
-- Refreshes all discovery sources automatically every 12 hours by default (`JOB_REFRESH_HOURS`) and shows the last refresh time in the results.
+- Refreshes all discovery sources automatically every 12 hours by default (`JOB_REFRESH_HOURS`) and shows the last refresh time in the results. Jooble results use a longer 24-hour cache and can be reused for up to 72 hours when a refresh is rate limited.
 - Searches audio-related listings near Los Angeles and Newark/NYC through Adzuna and remote audio listings through Remotive.
 - Computes audio fit ratings from listing text and the user's audio skills, using Remotive descriptions where available; listings without enough recognized skill phrases show **Not rated** instead of a guessed score.
 - Favors explicit new-grad and early-career data analyst results by including early-career terms in configured keyword searches and grouping explicit level language first. Unspecified levels remain separate.
@@ -25,7 +25,7 @@ I built this app to organize job searches across software engineering, data anal
 - Provides editable career-track skills and limited resume-text phrase and keyword-overlap checks.
 - Explains a listing's fit score in plain language with Google Gemini, including which skills are supported and which gaps to address.
 - Generates tailored cover letters from a pasted company/job description and saves editable drafts to each account.
-- Lets users save company notes and job details, generate application-question answers from only that information, generate interview questions with practice answers, edit and save the question list, print or download the Q&A, and move company details between the cover letter and interview views without retyping them.
+- Lets users save company notes and job details, generate application-question answers from only that information, generate interview questions with practice answers, edit and save the questions and answers together, print or download the Q&A, and move company details between the cover letter and interview views without retyping them.
 - Builds direct search links for LinkedIn, Indeed, ZipRecruiter, Glassdoor, Lensa, Dice, Monster, and Google Jobs from editable keywords and the current work type/area, so searches can be run on those boards without APIs and applications can be completed manually.
 - Offers six views: **Find jobs**, **Preview a pasted job**, **Resume evidence**, **Cover letter**, **Company & interviews**, and **Saved jobs**.
 
@@ -46,7 +46,7 @@ The **Find jobs** view includes an **Search other job boards** section. It turns
 | Monster | Opens `/jobs/search` with `q` and `where` |
 | Google Jobs | Opens a Google Jobs results search for the same terms |
 
-These are plain `<a>` links with `target="_blank" rel="noopener noreferrer"`. They are built entirely in the browser (`frontend/src/externalBoards.js`) using `new URL()` and `URLSearchParams`. No scraping, no hidden API calls, no credentials, and no listing data are exchanged with the app. Each board controls its own results, sign-in prompts, and application flow; jobs found there are not added to **Saved jobs** automatically. Use **Preview a pasted job** if you want to score and save one manually.
+These are plain `<a>` links with `target="_blank" rel="noopener noreferrer"`. They are built entirely in the browser (`frontend/src/externalBoards.js`) using `new URL()` and `URLSearchParams`. No scraping, no hidden API calls, no credentials, and no listing data are exchanged with the app. Each board controls its own results, sign-in prompts, and application flow; jobs found there are not added to **Saved jobs** automatically. Use **Add a job found here** on a board card to open the manual preview form with that board noted as the source. Enter the details yourself, optionally add the listing URL, check **I already applied** if applicable, then score and save the job. Nothing is imported from the board.
 
 ## Architecture
 
@@ -80,7 +80,7 @@ Optional features call **Google Gemini** from the backend:
 - **Explain this fit** sends the listing text, the applicant's skills or resume text, and the computed fit data to Gemini, which explains the score and names honest next steps. It is not saved.
 - **Cover letter** sends the pasted company/job info, background text, tone, and contact details to Gemini. Generated letters are saved as editable drafts in MongoDB, scoped to the signed-in account.
 - **Company & interviews** saves company notes, job details, application answers, interview questions, and practice answers in MongoDB under the signed-in account. It sends only the user-entered company info, job info, background text, and contact details to Gemini. The app does not look up or scrape the company.
-- **Interview questions** are practice prompts generated from that saved information. They are not guaranteed questions. The list can be edited and saved per company, and the Q&A can be printed/saved as a PDF from the browser or downloaded as a text file.
+- **Interview questions** are practice prompts generated from that saved information. They are not guaranteed questions. The questions and answers can be edited and saved together per company, and the Q&A can be printed/saved as a PDF from the browser or downloaded as a text file. Empty answers clear the saved answer for that question.
 
 All Gemini features use the backend-only `GEMINI_API_KEY`:
 
@@ -120,6 +120,8 @@ Locally verified:
 - Cover letters, fit explanations, company answers, and interview questions using the local Gemini configuration.
 - `/api/companies` create/read/update/delete, generated-content persistence, and account isolation against an isolated temporary database.
 - Frontend lint/build plus a headless-browser DOM and layout check of the **Company & interviews** view.
+- Backend smoke checks for edited interview answers, manual external-board saves with applied status, stale-cache fallback, and one bounded Jooble 429 retry.
+- Headless-browser check of Q&A answer editing/saving/persistence, the external-board entry point, the applied checkbox, and horizontal overflow.
 
 Still to verify before calling the deployment complete:
 

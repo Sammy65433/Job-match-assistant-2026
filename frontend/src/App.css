@@ -890,16 +890,17 @@
   background: rgba(34, 211, 238, 0.07);
 } /* end interview answer */
 
-.page .interview-answer strong {
+.page .interview-answer label {
   color: var(--cyan);
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 } /* end interview answer label */
 
-.page .interview-answer p {
+.page .interview-answer textarea {
+  width: 100%;
   white-space: pre-line;
-} /* end interview answer text */
+} /* end interview answer editor */
 
 /* ---------- AI fit explainer ---------- */
 .page .fit-explainer {

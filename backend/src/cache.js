@@ -22,6 +22,27 @@ export async function cached(key, maxAgeMs, loader) {
   return value;
 } // end cached
 
+export async function cachedWithFallback(key, maxAgeMs, staleMaxAgeMs, loader) {
+  const hit = store.get(key);
+  const age = hit ? Date.now() - hit.time : Infinity;
+
+  if (age < maxAgeMs) return hit.value;
+
+  try {
+    const value = await loader();
+
+    if (!isEmpty(value)) {
+      store.set(key, { time: Date.now(), value });
+    } // end if worth remembering
+
+    return value;
+  } catch (error) {
+    if (hit && age < staleMaxAgeMs) return hit.value;
+
+    throw error;
+  } // end try/catch
+} // end cachedWithFallback
+
 export function invalidateCache(prefix = "") {
   if (!prefix) {
     store.clear();

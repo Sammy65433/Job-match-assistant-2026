@@ -1,4 +1,4 @@
-import { cached } from "./cache.js";
+import { cached, cachedWithFallback } from "./cache.js";
 import { getMuseJobs } from "./muse.js";
 import { getAllBoardJobs } from "./boards.js";
 import { COMPANY_BOARDS } from "../data/companyBoards.js";
@@ -9,7 +9,11 @@ import { titleMatchesTrack, SENIOR_TITLE } from "./discover.js";
 import { isExplicitEntryLevel } from "./titles.js";
 import { repairText } from "./text.js";
 import { detectWorkMode } from "./workMode.js";
-import { CACHE_TTL_MS } from "./config.js";
+import {
+  CACHE_TTL_MS,
+  JOOBLE_CACHE_MS,
+  JOOBLE_STALE_MS
+} from "./config.js";
 
 const AREAS = {
   los_angeles: {
@@ -92,12 +96,16 @@ export async function discoverHybridJobs(track, area) {
     {
       name: "Jooble",
       run: () =>
-        cached(`jooble-${track}-${area}-hybrid`, CACHE_TTL_MS, () =>
-          getJoobleJobs({
-            track,
-            location: AREAS[area].joobleLocation,
-            hybrid: true
-          })
+        cachedWithFallback(
+          `jooble-${track}-${area}-hybrid`,
+          JOOBLE_CACHE_MS,
+          JOOBLE_STALE_MS,
+          () =>
+            getJoobleJobs({
+              track,
+              location: AREAS[area].joobleLocation,
+              hybrid: true
+            })
         )
     },
     {

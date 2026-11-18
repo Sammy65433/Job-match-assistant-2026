@@ -21,6 +21,7 @@ export default function FindJobsView({
   onSubmit,
   onSave,
   onApply,
+  onAddFoundJob,
   resumeText,
   request
 }) {
@@ -43,6 +44,7 @@ export default function FindJobsView({
         track={track}
         mode={mode}
         area={area}
+        onAddFoundJob={onAddFoundJob}
       />
 
       <section id="job-results" aria-label="Real job results">

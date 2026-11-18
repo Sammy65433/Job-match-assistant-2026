@@ -1,4 +1,3 @@
-import { invalidateCache } from "./cache.js";
 import { discoverRemoteJobs } from "./discover.js";
 import { discoverHybridJobs } from "./hybrid.js";
 import { discoverAudioJobs } from "./audio.js";
@@ -55,8 +54,6 @@ export async function refreshAllDiscovery() {
   const errors = [];
   let succeeded = 0;
   let failed = 0;
-
-  invalidateCache();
 
   for (const target of refreshTargets()) {
     try {

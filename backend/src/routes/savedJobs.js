@@ -104,18 +104,31 @@ router.post("/from-listing", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { track, title, company, description, requiredSkills } =
-    req.body ?? {};
+  const {
+    track,
+    title,
+    company,
+    description,
+    requiredSkills,
+    source,
+    url,
+    applied
+  } = req.body ?? {};
+  const sourceText = cleanedText(source, 50).replace(/[^\w\s.-]/g, "").trim();
+  const urlText = cleanedText(url, 2000);
 
   if (
     !validTrack(track) ||
     !validTitle(title) ||
     !validCompany(company) ||
     !validDescription(description, { required: true }) ||
-    !validSkills(requiredSkills)
+    !validSkills(requiredSkills) ||
+    (urlText && !validListingUrl(urlText))
   ) {
     return res.status(400).json({ error: "Invalid saved job." });
   }
+
+  const appliedNow = applied === true;
 
   try {
     const savedJob = await SavedJob.create({
@@ -124,7 +137,11 @@ router.post("/", async (req, res) => {
       title: title.trim(),
       company: company.trim(),
       description: description.trim(),
-      requiredSkills: requiredSkills.map((skill) => skill.trim())
+      requiredSkills: requiredSkills.map((skill) => skill.trim()),
+      source: sourceText || "Manual",
+      url: urlText,
+      status: appliedNow ? "applied" : "saved",
+      appliedAt: appliedNow ? new Date() : null
     });
 
     return res.status(201).json({ savedJob });

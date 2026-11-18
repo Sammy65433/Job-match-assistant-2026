@@ -2,6 +2,8 @@ import { getRemotiveAudioJobs } from "./remotive.js";
 import { RELATED_TITLE, searchAdzunaAudioJobs } from "./adzuna.js";
 import { getJoobleJobs } from "./jooble.js";
 import { detectWorkMode } from "./workMode.js";
+import { cachedWithFallback } from "./cache.js";
+import { JOOBLE_CACHE_MS, JOOBLE_STALE_MS } from "./config.js";
 
 const AUDIO_HYBRID_LOCATION = {
   los_angeles: "Los Angeles, CA",
@@ -11,11 +13,17 @@ const AUDIO_HYBRID_LOCATION = {
 async function discoverAudioViaJoobleHybrid(area) {
   const joobleLocation = AUDIO_HYBRID_LOCATION[area] || "Los Angeles, CA";
 
-  const found = await getJoobleJobs({
-    track: "audio",
-    location: joobleLocation,
-    hybrid: true
-  });
+  const found = await cachedWithFallback(
+    `jooble-audio-${area}-hybrid`,
+    JOOBLE_CACHE_MS,
+    JOOBLE_STALE_MS,
+    () =>
+      getJoobleJobs({
+        track: "audio",
+        location: joobleLocation,
+        hybrid: true
+      })
+  );
 
   return found
     .map((job) => ({ ...job, workMode: detectWorkMode(job) }))

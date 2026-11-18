@@ -47,3 +47,10 @@ function configuredRefreshHours() {
 export const CACHE_TTL_HOURS = configuredRefreshHours();
 
 export const CACHE_TTL_MS = CACHE_TTL_HOURS * HOUR_MS;
+
+/* Jooble enforces tighter request quotas than the other sources. Keep its
+ * results longer and reuse the last successful response if a refresh is
+ * rejected with a rate-limit error.
+ */
+export const JOOBLE_CACHE_MS = 24 * HOUR_MS;
+export const JOOBLE_STALE_MS = 72 * HOUR_MS;

@@ -1,4 +1,4 @@
-import { cached } from "./cache.js";
+import { cached, cachedWithFallback } from "./cache.js";
 import { getRemotiveJobs, selectRemotiveJobs } from "./remotive.js";
 import { getJobicyJobs } from "./jobicy.js";
 import { getHimalayasJobs } from "./himalayas.js";
@@ -15,7 +15,11 @@ import { getHackerNewsJobs, selectHackerNewsJobs } from "./hackernews.js";
 import { getUsaJobs } from "./usajobs.js";
 import { getReedJobs } from "./reed.js";
 import { getFindworkJobs } from "./findwork.js";
-import { CACHE_TTL_MS } from "./config.js";
+import {
+  CACHE_TTL_MS,
+  JOOBLE_CACHE_MS,
+  JOOBLE_STALE_MS
+} from "./config.js";
 import { repairText } from "./text.js";
 import {
   ENTRY_TITLE,
@@ -184,17 +188,22 @@ export async function discoverRemoteJobs(track) {
     {
       name: "Jooble",
       run: () =>
-        cached(`jooble-${track}-remote`, CACHE_TTL_MS, async () => {
-          const list = await getJoobleJobs({
-            track,
-            location: "United States",
-            remote: true
-          });
+        cachedWithFallback(
+          `jooble-${track}-remote`,
+          JOOBLE_CACHE_MS,
+          JOOBLE_STALE_MS,
+          async () => {
+            const list = await getJoobleJobs({
+              track,
+              location: "United States",
+              remote: true
+            });
 
-          return list.filter((job) =>
-            /remote/i.test(`${job.location} ${job.title} ${job.description}`)
-          );
-        })
+            return list.filter((job) =>
+              /remote/i.test(`${job.location} ${job.title} ${job.description}`)
+            );
+          }
+        )
     },
     {
       name: "Arbeitnow",

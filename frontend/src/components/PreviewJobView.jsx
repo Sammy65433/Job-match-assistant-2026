@@ -14,11 +14,16 @@ export default function PreviewJobView({
   customMatch,
   resumeText,
   skillText,
+  listingUrl,
+  appliedNow,
+  sourceHint,
   request,
   onTitleChange,
   onCompanyChange,
   onDescriptionChange,
   onRequiredSkillChange,
+  onListingUrlChange,
+  onAppliedChange,
   onSubmit,
   onSave
 }) {
@@ -37,6 +42,13 @@ export default function PreviewJobView({
         score. It is a screening estimate, not proof that you qualify. You can
         save the job afterward.
       </p>
+
+      {sourceHint && (
+        <p role="status" className="cover-notice">
+          Adding a job found on {sourceHint}. Enter the details yourself —
+          nothing is imported from the board.
+        </p>
+      )}
 
       <p>
         Enter required skills from the listing. This preview uses your editable
@@ -79,6 +91,25 @@ export default function PreviewJobView({
           value={requiredSkillText}
           onChange={(event) => onRequiredSkillChange(event.target.value)}
         />
+
+        <label htmlFor="listing-url">Listing URL (optional)</label>
+        <input
+          id="listing-url"
+          type="url"
+          value={listingUrl}
+          placeholder="https://..."
+          onChange={(event) => onListingUrlChange(event.target.value)}
+        />
+
+        <label className="checkbox-label" htmlFor="already-applied">
+          <input
+            id="already-applied"
+            type="checkbox"
+            checked={appliedNow}
+            onChange={(event) => onAppliedChange(event.target.checked)}
+          />
+          I already applied to this job
+        </label>
 
         <button type="submit" disabled={previewLoading}>
           {previewLoading ? "Checking..." : "Preview match"}

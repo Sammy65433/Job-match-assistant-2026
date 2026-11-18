@@ -6,7 +6,7 @@ import {
   externalLocation
 } from "./externalBoards.js";
 
-export default function ExternalJobBoards({ track, mode, area }) {
+export default function ExternalJobBoards({ track, mode, area, onAddFoundJob }) {
   const [keywords, setKeywords] = useState(() => defaultExternalKeywords(track));
   const [copied, setCopied] = useState(false);
 
@@ -72,6 +72,13 @@ export default function ExternalJobBoards({ track, mode, area }) {
                 {copied ? "Copied" : "Copy search terms"}
               </button>
             )}
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => onAddFoundJob?.(board.name)}
+            >
+              Add a job found here
+            </button>
           </li>
         ))}
       </ul>
@@ -79,7 +86,7 @@ export default function ExternalJobBoards({ track, mode, area }) {
       <p className="external-footnote">
         Boards that need an account will ask you to sign in on their own site.
         Jobs found here are not added to this app automatically — use{" "}
-        <strong>Preview a pasted job</strong> to score and save one manually.
+        <strong>Add a job found here</strong> to enter and save one yourself.
       </p>
     </section>
   );

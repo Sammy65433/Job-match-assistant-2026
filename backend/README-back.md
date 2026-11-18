@@ -15,7 +15,7 @@ Express API and MongoDB data layer for account access, job discovery, saved list
 - Provides Adzuna audio searches for Los Angeles and Newark/NYC, plus a Remotive remote audio source merged into the remote audio search. Remotive descriptions are normalized before audio scoring, and listings with too few recognized skill phrases return `matchScore: null`.
 - Finds hybrid software/data/AI listings for the Los Angeles and Newark/NYC areas. Data analyst keyword searches include “entry level,” and explicit early-career language in titles or descriptions is classified ahead of unspecified levels.
 - Reads company job boards from Greenhouse, Lever, Ashby, SmartRecruiters, and Workable (`data/companyBoards.js`).
-- Refreshes every discovery source automatically every `JOB_REFRESH_HOURS` (default 12) and on startup. `/api/discover/status` reports the last and next refresh.
+- Refreshes every discovery source automatically every `JOB_REFRESH_HOURS` (default 12) and on startup. `/api/discover/status` reports the last and next refresh. Jooble uses a separate 24-hour cache, one bounded retry on 429/5xx, and up to 72 hours of stale fallback instead of clearing all caches on every refresh.
 - Supports pasted-job skill previews and limited resume keyword checks.
 - Saves account-scoped company profiles with user-entered research, job details, application answers, and generated interview questions and answers.
 - Uses Gemini only on information supplied by the signed-in user; company lookups and invented experience are deliberately excluded.
@@ -75,7 +75,7 @@ Never commit `.env` or put backend secrets in Vite variables. Rotate any previou
 | `POST /api/apply` | Authenticated. Body: `{ source, sourceJobId, url, title, description }`. Best-effort source-aware submission (Greenhouse when `GREENHOUSE_BOARD_TOKEN` is set), otherwise returns the listing URL so the client can open it |
 | `GET /api/saved-jobs?track=software` | List this user's saved jobs |
 | `POST /api/saved-jobs/from-listing` | Save a discovered listing |
-| `POST /api/saved-jobs` | Save a manually pasted job |
+| `POST /api/saved-jobs` | Save a manually pasted job; accepts optional `source`, HTTPS `url`, and `applied` boolean, and sets `status: "applied"` with `appliedAt` when requested |
 | `PATCH /api/saved-jobs/:id/status` | Update status, applied date, or legacy interview date |
 | `PUT /api/saved-jobs/:id/interviews` | Replace interview rounds (date, round, contact, location, notes) |
 | `POST /api/matches/custom` | Preview manually entered required skills |
@@ -95,7 +95,7 @@ Never commit `.env` or put backend secrets in Vite variables. Rotate any previou
 | `DELETE /api/companies/:id/answers/:answerId` | Delete a saved application answer |
 | `POST /api/companies/:id/interview-questions` | Generate and save 12 practice interview questions from profile/background text |
 | `POST /api/companies/:id/interview-answers` | Generate and save grounded practice answers for the saved interview questions |
-| `PATCH /api/companies/:id/interview` | Save or edit the question list for a company, preserving answers for unchanged questions |
+| `PATCH /api/companies/:id/interview` | Save or edit interview questions and answers for a company; submitted answers update matching questions, empty answers clear, unchanged answers are preserved, and `generatedAt` is not overwritten |
 
 All `/api/cover-letters`, `/api/fit-explainer`, and `/api/companies` routes require the app session token. Gemini generation routes are rate limited. The repository may also expose `/api/jobs` and `/api/matches` for fictional test fixtures. Those endpoints do not return real vacancies.
 
@@ -116,7 +116,7 @@ Related spellings count as one skill: `LLM`, `LLMs`, and `large language models`
 - Link to each listing's original source. Keep required source attribution visible.
 - Some descriptions are missing, truncated, or HTML-formatted. Do not execute source HTML in the browser.
 - The Muse and RemoShift return `401`/`403` to some hosts. Those responses are treated as "no listings" so they do not produce a user-facing source warning; other sources still load.
-- Source caches are in memory, use a TTL of `JOB_REFRESH_HOURS` (default 12), and reset on restart.
+- Source caches are in memory and reset on restart. Most sources use a TTL of `JOB_REFRESH_HOURS` (default 12). Jooble uses `JOOBLE_CACHE_MS` (24 hours) and `JOOBLE_STALE_MS` (72 hours); its last successful response is reused when a refresh is rate limited, and a 429/5xx receives one bounded retry first.
 - A background scheduler warms every source on startup and then every `JOB_REFRESH_HOURS`. On hosts that sleep idle instances (for example, free tiers), the refresh runs the next time the instance wakes; use an external cron job if true wall-clock scheduling is required.
 - `SavedJob` uses a per-owner unique index for discovered listings. Older ownerless saved jobs require deliberate migration.
 - `CompanyProfile` documents are scoped by `ownerId`. They store user-entered company/job notes plus generated answers, interview questions, and interview answers; the owner field is excluded from API responses.
@@ -125,4 +125,4 @@ Related spellings count as one skill: `LLM`, `LLMs`, and `large language models`
 
 ## Deployment checks
 
-The backend `/api/health` returned `{"status":"ok"}` on Render. That confirms the server responds, **not** that every source or private flow works in production. Check deployed Google sign-in, remote/audio discovery, saving, refresh, account isolation, and status updates before calling the full workflow verified. Also verify cover letters, fit explanations, saved company profiles, generated application answers, generated interview questions, and account isolation for the new company routes.
+The backend `/api/health` returned `{"status":"ok"}` on Render. That confirms the server responds, **not** that every source or private flow works in production. Check deployed Google sign-in, remote/audio discovery, saving, refresh, account isolation, and status updates before calling the full workflow verified. Also verify cover letters, fit explanations, saved company profiles, generated application answers, generated interview questions, edited interview answers, manual external-board saves, and account isolation for the new company routes. A Jooble 429 should now be retried once and then fall back to the last cached response instead of wiping every source cache.

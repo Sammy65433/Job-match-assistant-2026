@@ -65,6 +65,9 @@ export default function App() {
   const [company, setCompany] = useState("");
   const [description, setDescription] = useState("");
   const [requiredSkillText, setRequiredSkillText] = useState("");
+  const [listingUrl, setListingUrl] = useState("");
+  const [appliedNow, setAppliedNow] = useState(false);
+  const [sourceHint, setSourceHint] = useState("");
 
   const changeAuth = useCallback((nextAuth, notice = "") => {
     setAuth(nextAuth);
@@ -77,6 +80,9 @@ export default function App() {
     setCompany("");
     setDescription("");
     setRequiredSkillText("");
+    setListingUrl("");
+    setAppliedNow(false);
+    setSourceHint("");
     setCoverPrefill(null);
     setCompanyPrefill(null);
     setPage("jobs");
@@ -261,7 +267,10 @@ export default function App() {
         title,
         company,
         description,
-        requiredSkills
+        requiredSkills,
+        source: sourceHint || "Manual",
+        url: listingUrl,
+        applied: appliedNow
       });
 
       setSavedJobs((current) => [data.savedJob, ...current]);
@@ -270,6 +279,8 @@ export default function App() {
       setCompany("");
       setDescription("");
       setRequiredSkillText("");
+      setListingUrl("");
+      setAppliedNow(false);
     } catch (error) {
       setFormError(error.message);
     } finally {
@@ -396,6 +407,19 @@ export default function App() {
     setPage("cover");
   } // end backToCoverFromCompany
 
+  function openPreviewFromBoard(boardName) {
+    setTitle("");
+    setCompany("");
+    setDescription("");
+    setRequiredSkillText("");
+    setCustomMatch(null);
+    setListingUrl("");
+    setAppliedNow(false);
+    setSourceHint(String(boardName || "External job board").slice(0, 50));
+    setFormError("");
+    setPage("preview");
+  } // end openPreviewFromBoard
+
   if (!auth) {
     return (
       <LoginPage
@@ -460,6 +484,7 @@ export default function App() {
           onSubmit={findRealJobs}
           onSave={saveListing}
           onApply={applyListing}
+          onAddFoundJob={openPreviewFromBoard}
           resumeText={resumeTextByTrack[track]}
           request={request}
         />
@@ -478,11 +503,16 @@ export default function App() {
           customMatch={customMatch}
           resumeText={resumeTextByTrack[track]}
           skillText={skillText}
+          listingUrl={listingUrl}
+          appliedNow={appliedNow}
+          sourceHint={sourceHint}
           request={request}
           onTitleChange={setTitle}
           onCompanyChange={setCompany}
           onDescriptionChange={setDescription}
           onRequiredSkillChange={setRequiredSkillText}
+          onListingUrlChange={setListingUrl}
+          onAppliedChange={setAppliedNow}
           onSubmit={previewCustomJob}
           onSave={saveJob}
         />

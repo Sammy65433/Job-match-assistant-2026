@@ -31,21 +31,39 @@ export async function getJoobleJobs({ track, location, remote = false, hybrid = 
 
   if (!base) return [];
 
-  const response = await fetch(`${JOOBLE_URL}/${encodeURIComponent(apiKey)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      keywords: remote ? `remote ${base}` : hybrid ? `hybrid ${base}` : base,
-      location,
-      radius: "40",
-      page: "1"
-    }),
-    signal: AbortSignal.timeout(10000)
+  const payload = JSON.stringify({
+    keywords: remote ? `remote ${base}` : hybrid ? `hybrid ${base}` : base,
+    location,
+    radius: "40",
+    page: "1"
   });
+  let response;
 
-  if (!response.ok) {
-    throw new Error(`Jooble returned ${response.status}`);
-  } // end if not ok
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    response = await fetch(`${JOOBLE_URL}/${encodeURIComponent(apiKey)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (response.ok) break;
+
+    const retryable = response.status === 429 || response.status >= 500;
+
+    if (!retryable || attempt === 1) {
+      throw new Error(`Jooble returned ${response.status}`);
+    } // end if no retry
+
+    const retryAfterHeader = response.headers.get("retry-after");
+    const retryAfter =
+      retryAfterHeader === null ? NaN : Number(retryAfterHeader);
+    const delay = Number.isFinite(retryAfter)
+      ? Math.min(Math.max(retryAfter * 1000, 250), 2000)
+      : 1000;
+
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  } // end retry loop
 
   const data = await response.json();
 
