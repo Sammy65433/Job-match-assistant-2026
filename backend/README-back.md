@@ -1,6 +1,6 @@
 # Job Match Assistant Backend
 
-Express API and MongoDB data layer for account access, job discovery, saved listings, and manual application tracking.
+Express API and MongoDB data layer for account access, job discovery, saved listings, manual application tracking, saved company research, and Gemini writing tools.
 
 **Live backend:** https://job-match-assistant-backend.onrender.com
 
@@ -17,6 +17,8 @@ Express API and MongoDB data layer for account access, job discovery, saved list
 - Reads company job boards from Greenhouse, Lever, Ashby, SmartRecruiters, and Workable (`data/companyBoards.js`).
 - Refreshes every discovery source automatically every `JOB_REFRESH_HOURS` (default 12) and on startup. `/api/discover/status` reports the last and next refresh.
 - Supports pasted-job skill previews and limited resume keyword checks.
+- Saves account-scoped company profiles with user-entered research, job details, application answers, and generated interview questions.
+- Uses Gemini only on information supplied by the signed-in user; company lookups and invented experience are deliberately excluded.
 
 The three fictional listings in `data/jobs.js` are test fixtures, not jobs displayed by the main real-job search.
 
@@ -37,6 +39,8 @@ Configure server-side variables privately:
 | --- | --- |
 | `MONGODB_URI` | Job app database connection |
 | `JOB_AUTH_SECRET` | Signs and verifies app session tokens |
+| `GEMINI_API_KEY` | Enables cover letters, fit explanations, company answers, and interview questions; server-side only |
+| `GEMINI_MODEL` | Optional Gemini model override; defaults to `gemini-3.5-flash-lite` with a bounded fallback |
 | `GOOGLE_CLIENT_ID` | Expected audience for verified Google ID tokens |
 | `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` | Adzuna API access |
 | `JOOBLE_API_KEY` | Jooble API access |
@@ -77,8 +81,21 @@ Never commit `.env` or put backend secrets in Vite variables. Rotate any previou
 | `POST /api/matches/custom` | Preview manually entered required skills |
 | `POST /api/resume/compare-preview` | Manual resume phrase check |
 | `POST /api/resume/keyword-overlap` | Keyword-overlap check |
+| `GET /api/cover-letters?track=software` | List this user's cover-letter drafts |
+| `POST /api/cover-letters` | Generate and save a cover-letter draft from user-entered text |
+| `PATCH /api/cover-letters/:id` | Update a saved cover-letter draft |
+| `DELETE /api/cover-letters/:id` | Delete a saved cover-letter draft |
+| `POST /api/fit-explainer` | Generate an unsaved Gemini fit explanation from user-entered data |
+| `GET /api/companies` | List this user's saved company profiles |
+| `GET /api/companies/:id` | Retrieve one owned company profile |
+| `POST /api/companies` | Save a company profile from user-entered company and job text |
+| `PATCH /api/companies/:id` | Update an owned company profile |
+| `DELETE /api/companies/:id` | Delete an owned company profile |
+| `POST /api/companies/:id/answers` | Generate and save an answer to an application question using only profile/background text |
+| `DELETE /api/companies/:id/answers/:answerId` | Delete a saved application answer |
+| `POST /api/companies/:id/interview-questions` | Generate and save 12 practice interview questions from profile/background text |
 
-The repository may also expose `/api/jobs` and `/api/matches` for fictional test fixtures. Those endpoints do not return real vacancies.
+All `/api/cover-letters`, `/api/fit-explainer`, and `/api/companies` routes require the app session token. Gemini generation routes are rate limited. The repository may also expose `/api/jobs` and `/api/matches` for fictional test fixtures. Those endpoints do not return real vacancies.
 
 ## Matching limitations
 
@@ -100,9 +117,10 @@ Related spellings count as one skill: `LLM`, `LLMs`, and `large language models`
 - Source caches are in memory, use a TTL of `JOB_REFRESH_HOURS` (default 12), and reset on restart.
 - A background scheduler warms every source on startup and then every `JOB_REFRESH_HOURS`. On hosts that sleep idle instances (for example, free tiers), the refresh runs the next time the instance wakes; use an external cron job if true wall-clock scheduling is required.
 - `SavedJob` uses a per-owner unique index for discovered listings. Older ownerless saved jobs require deliberate migration.
+- `CompanyProfile` documents are scoped by `ownerId`. They store user-entered company/job notes plus generated answers and interview questions; the owner field is excluded from API responses.
 - The previously conflicting global `{ source, sourceJobId }` index was removed locally so separate users can save the same listing.
 - Auth endpoints have a rate limiter. Review provider terms and package-audit findings before expanding public use.
 
 ## Deployment checks
 
-The backend `/api/health` returned `{"status":"ok"}` on Render. That confirms the server responds, **not** that every source or private flow works in production. Check deployed Google sign-in, remote/audio discovery, saving, refresh, account isolation, and status updates before calling the full workflow verified.
+The backend `/api/health` returned `{"status":"ok"}` on Render. That confirms the server responds, **not** that every source or private flow works in production. Check deployed Google sign-in, remote/audio discovery, saving, refresh, account isolation, and status updates before calling the full workflow verified. Also verify cover letters, fit explanations, saved company profiles, generated application answers, generated interview questions, and account isolation for the new company routes.

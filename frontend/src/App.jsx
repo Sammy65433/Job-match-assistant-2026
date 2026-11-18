@@ -7,6 +7,7 @@ import LoginPage from "./LoginPage.jsx";
 import { apiRequest } from "./api.js";
 import { descriptionText } from "./descriptionText.js";
 import AppNav from "./components/AppNav.jsx";
+import CompanyView from "./components/CompanyView.jsx";
 import CoverLetterView from "./components/CoverLetterView.jsx";
 import FindJobsView from "./components/FindJobsView.jsx";
 import PreviewJobView from "./components/PreviewJobView.jsx";
@@ -113,6 +114,7 @@ export default function App() {
       path.startsWith("/api/resume/") ||
       path.startsWith("/api/cover-letters") ||
       path.startsWith("/api/fit-explainer") ||
+      path.startsWith("/api/companies") ||
       path === "/api/matches/custom";
 
     if (isPrivate && !token) {
@@ -488,6 +490,18 @@ export default function App() {
           }
           prefill={coverPrefill}
           onPrefillApplied={() => setCoverPrefill(null)}
+        />
+      )}
+
+      {page === "company" && (
+        <CompanyView
+          track={track}
+          trackLabel={TRACKS[track].label}
+          request={request}
+          resumeText={resumeTextByTrack[track]}
+          onResumeTextChange={(text) =>
+            setResumeTextByTrack((current) => ({ ...current, [track]: text }))
+          }
         />
       )}
 

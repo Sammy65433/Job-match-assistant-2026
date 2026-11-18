@@ -1,5 +1,6 @@
 import {
   Bookmark,
+  Building2,
   ClipboardPaste,
   FileCheck2,
   LogOut,
@@ -12,6 +13,7 @@ const TABS = [
   ["preview", "Preview a pasted job", ClipboardPaste],
   ["resume", "Resume evidence", FileCheck2],
   ["cover", "Cover letter", PenLine],
+  ["company", "Company & interviews", Building2],
   ["saved", "Saved jobs", Bookmark]
 ];
 

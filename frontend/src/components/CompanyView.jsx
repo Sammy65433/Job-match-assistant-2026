@@ -1,0 +1,592 @@
+import { useEffect, useRef, useState } from "react";
+import { Building2, Copy, Printer, Trash2 } from "lucide-react";
+
+import { DEFAULT_PROFILE } from "../profileDefaults.js";
+import { starterTextFor } from "../resumeStarters.js";
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+} // end escapeHtml
+
+function formatDate(value) {
+  if (!value) return "";
+
+  return new Date(value).toLocaleDateString([], { dateStyle: "medium" });
+} // end formatDate
+
+function contactSummary(profile) {
+  return [profile.fullName, profile.email, profile.location, profile.links]
+    .filter((value) => value && value.trim())
+    .join(" | ");
+} // end contactSummary
+
+export default function CompanyView({
+  track,
+  trackLabel,
+  request,
+  resumeText,
+  onResumeTextChange
+}) {
+  const [profiles, setProfiles] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [company, setCompany] = useState("");
+  const [website, setWebsite] = useState("");
+  const [notes, setNotes] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [profile, setProfile] = useState({ ...DEFAULT_PROFILE });
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [answers, setAnswers] = useState([]);
+  const [interview, setInterview] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [generatingAnswer, setGeneratingAnswer] = useState(false);
+  const [generatingInterview, setGeneratingInterview] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const requestRef = useRef(request);
+
+  useEffect(() => {
+    requestRef.current = request;
+  }); // end keep request ref current
+
+  useEffect(() => {
+    let active = true;
+
+    requestRef
+      .current("/api/companies")
+      .then((data) => {
+        if (!active) return;
+        setProfiles(Array.isArray(data.profiles) ? data.profiles : []);
+      })
+      .catch((err) => {
+        if (active) setError(err.message);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function clearMessages() {
+    setError("");
+    setNotice("");
+  } // end clearMessages
+
+  function openProfile(item) {
+    setSelectedId(item._id);
+    setCompany(item.company || "");
+    setWebsite(item.website || "");
+    setNotes(item.notes || "");
+    setJobTitle(item.jobTitle || "");
+    setJobDescription(item.jobDescription || "");
+    setAnswers(Array.isArray(item.answers) ? item.answers : []);
+    setInterview(item.interview || null);
+    setAnswer("");
+    setQuestion("");
+    clearMessages();
+  } // end openProfile
+
+  function newCompany() {
+    setSelectedId(null);
+    setCompany("");
+    setWebsite("");
+    setNotes("");
+    setJobTitle("");
+    setJobDescription("");
+    setAnswers([]);
+    setInterview(null);
+    setAnswer("");
+    setQuestion("");
+    clearMessages();
+  } // end newCompany
+
+  function updateProfile(field, value) {
+    setProfile((current) => ({ ...current, [field]: value }));
+  } // end updateProfile
+
+  function payload() {
+    return { company, website, notes, jobTitle, jobDescription };
+  } // end payload
+
+  async function persist() {
+    const data = selectedId
+      ? await requestRef.current(`/api/companies/${encodeURIComponent(selectedId)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload())
+        })
+      : await requestRef.current("/api/companies", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload())
+        });
+
+    const saved = data.profile;
+
+    setSelectedId(saved._id);
+    setProfiles((current) => [saved, ...current.filter((item) => item._id !== saved._id)]);
+
+    return saved;
+  } // end persist
+
+  async function saveCompany(event) {
+    event.preventDefault();
+    clearMessages();
+
+    if (!company.trim()) {
+      setError("Enter a company name first.");
+      return;
+    } // end if missing company
+
+    setSaving(true);
+
+    try {
+      const saved = await persist();
+      openProfile(saved);
+      setNotice("Company info saved.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    } // end try/catch
+  } // end saveCompany
+
+  async function deleteCompany() {
+    if (!selectedId) return;
+    if (!window.confirm(`Delete the saved info for ${company}?`)) return;
+
+    clearMessages();
+
+    try {
+      await requestRef.current(`/api/companies/${encodeURIComponent(selectedId)}`, {
+        method: "DELETE"
+      });
+      setProfiles((current) => current.filter((item) => item._id !== selectedId));
+      newCompany();
+      setNotice("Company info deleted.");
+    } catch (err) {
+      setError(err.message);
+    } // end try/catch
+  } // end deleteCompany
+
+  async function generateAnswer(event) {
+    event.preventDefault();
+    clearMessages();
+
+    if (!question.trim()) {
+      setError("Paste the application question first.");
+      return;
+    } // end if missing question
+
+    setGeneratingAnswer(true);
+
+    try {
+      const saved = await persist();
+      const data = await requestRef.current(
+        `/api/companies/${encodeURIComponent(saved._id)}/answers`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, resumeText, profile })
+        }
+      );
+
+      setAnswer(data.answer?.answer || "");
+      setAnswers((current) => [data.answer, ...current]);
+      setNotice("Answer generated and saved with this company.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGeneratingAnswer(false);
+    } // end try/catch
+  } // end generateAnswer
+
+  async function generateInterview() {
+    clearMessages();
+    setGeneratingInterview(true);
+
+    try {
+      const saved = await persist();
+      const data = await requestRef.current(
+        `/api/companies/${encodeURIComponent(saved._id)}/interview-questions`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resumeText, profile })
+        }
+      );
+
+      setInterview(data.interview);
+      setNotice("Interview questions generated and saved.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGeneratingInterview(false);
+    } // end try/catch
+  } // end generateInterview
+
+  async function deleteAnswer(answerId) {
+    if (!selectedId) return;
+    clearMessages();
+
+    try {
+      await requestRef.current(
+        `/api/companies/${encodeURIComponent(selectedId)}/answers/${encodeURIComponent(answerId)}`,
+        { method: "DELETE" }
+      );
+      setAnswers((current) => current.filter((item) => item._id !== answerId));
+    } catch (err) {
+      setError(err.message);
+    } // end try/catch
+  } // end deleteAnswer
+
+  async function copyText(text, message) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice(message);
+      setError("");
+    } catch {
+      setError("Could not copy. Select the text and copy it manually.");
+    } // end try/catch
+  } // end copyText
+
+  function printInterview() {
+    const list = Array.isArray(interview?.questions) ? interview.questions : [];
+
+    if (!list.length) {
+      setError("Generate interview questions first.");
+      return;
+    } // end if empty
+
+    const frame = document.createElement("iframe");
+
+    frame.style.position = "fixed";
+    frame.style.right = "0";
+    frame.style.bottom = "0";
+    frame.style.width = "0";
+    frame.style.height = "0";
+    frame.style.border = "0";
+    document.body.appendChild(frame);
+
+    const doc = frame.contentWindow?.document;
+
+    if (!doc) {
+      frame.remove();
+      setError("Could not open the print view.");
+      return;
+    } // end if no document
+
+    const title = `${company || "Company"} interview questions`;
+    const items = list.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+
+    doc.open();
+    doc.write(
+      `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(
+        title
+      )}</title><style>
+        body { margin: 0; padding: 40px; color: #111827; font-family: Georgia, "Times New Roman", serif; line-height: 1.6; }
+        h1 { font-size: 22px; margin: 0 0 8px; }
+        p { color: #4b5563; font-size: 13px; margin: 0 0 24px; }
+        ol { padding-left: 26px; }
+        li { margin-bottom: 14px; }
+        @page { margin: 20mm; }
+      </style></head><body>
+        <h1>${escapeHtml(title)}</h1>
+        <p>${escapeHtml(contactSummary(profile))}</p>
+        <ol>${items}</ol>
+      </body></html>`
+    );
+    doc.close();
+
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+    window.setTimeout(() => frame.remove(), 1000);
+  } // end printInterview
+
+  const interviewQuestions = Array.isArray(interview?.questions)
+    ? interview.questions
+    : [];
+
+  return (
+    <section className="company-view" aria-label="Company research and interview prep">
+      <h2>
+        <Building2 size={22} aria-hidden="true" />
+        Company &amp; interviews: {trackLabel}
+      </h2>
+      <p>
+        Save what you know about a company, then generate answers to application
+        questions and likely interview questions from that information. The AI
+        only uses what you enter — it does not look up the company or invent
+        experience. Review every answer before sending it.
+      </p>
+
+      {error && <p role="alert" className="error">{error}</p>}
+      {notice && <p role="status" className="cover-notice">{notice}</p>}
+
+      <form onSubmit={saveCompany}>
+        <div className="company-heading">
+          <h3>Saved companies</h3>
+          <button type="button" className="secondary" onClick={newCompany}>
+            New company
+          </button>
+        </div>
+
+        {profiles.length > 0 && (
+          <ul className="company-list">
+            {profiles.map((item) => (
+              <li key={item._id}>
+                <button
+                  type="button"
+                  className="cover-draft-open"
+                  aria-current={item._id === selectedId ? "true" : undefined}
+                  onClick={() => openProfile(item)}
+                >
+                  <strong>{item.company}</strong>
+                  <span>
+                    {item.jobTitle || "No role saved"} · Updated{" "}
+                    {formatDate(item.updatedAt)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="cover-grid">
+          <div>
+            <label htmlFor="company-name">Company name</label>
+            <input
+              id="company-name"
+              type="text"
+              maxLength={150}
+              value={company}
+              onChange={(event) => setCompany(event.target.value)}
+              placeholder="e.g. Jump"
+            />
+          </div>
+          <div>
+            <label htmlFor="company-website">Website (optional)</label>
+            <input
+              id="company-website"
+              type="text"
+              maxLength={300}
+              value={website}
+              onChange={(event) => setWebsite(event.target.value)}
+            />
+          </div>
+        </div>
+
+        <label htmlFor="company-role">Job title</label>
+        <input
+          id="company-role"
+          type="text"
+          maxLength={150}
+          value={jobTitle}
+          onChange={(event) => setJobTitle(event.target.value)}
+        />
+
+        <label htmlFor="company-notes">Company info / research notes</label>
+        <textarea
+          id="company-notes"
+          rows={5}
+          maxLength={15000}
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          placeholder="Mission, values, products, teams, recent news — paste what you found."
+        />
+
+        <label htmlFor="company-job">Job description (optional)</label>
+        <textarea
+          id="company-job"
+          rows={5}
+          maxLength={15000}
+          value={jobDescription}
+          onChange={(event) => setJobDescription(event.target.value)}
+        />
+
+        <label htmlFor="company-background">Your background / resume text</label>
+        <textarea
+          id="company-background"
+          rows={5}
+          maxLength={20000}
+          value={resumeText}
+          onChange={(event) => onResumeTextChange(event.target.value)}
+        />
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => onResumeTextChange(starterTextFor(track))}
+        >
+          Use {trackLabel} starter background
+        </button>
+
+        <details className="cover-contact">
+          <summary>Contact details used in answers</summary>
+          <div className="cover-grid">
+            {[
+              ["fullName", "Full name"],
+              ["email", "Email"],
+              ["phone", "Phone"],
+              ["location", "Location"],
+              ["links", "Links"]
+            ].map(([field, label]) => (
+              <div key={field}>
+                <label htmlFor={`company-profile-${field}`}>{label}</label>
+                <input
+                  id={`company-profile-${field}`}
+                  type="text"
+                  value={profile[field] || ""}
+                  onChange={(event) => updateProfile(field, event.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+        </details>
+
+        <div className="cover-actions">
+          <button type="submit" disabled={saving || generatingAnswer || generatingInterview}>
+            {saving ? "Saving..." : "Save company info"}
+          </button>
+          {selectedId && (
+            <button type="button" className="secondary" onClick={deleteCompany}>
+              <Trash2 size={16} aria-hidden="true" /> Delete company
+            </button>
+          )}
+        </div>
+      </form>
+
+      <form onSubmit={generateAnswer} className="company-section">
+        <h3>Application questions</h3>
+        <p>
+          Paste a question such as “Why are you interested in this position?”
+          The answer is saved under this company so you can reuse it.
+        </p>
+
+        <label htmlFor="company-question">Question</label>
+        <textarea
+          id="company-question"
+          rows={3}
+          maxLength={2000}
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+        />
+
+        <button
+          type="submit"
+          disabled={generatingAnswer || !question.trim() || !company.trim()}
+        >
+          {generatingAnswer ? "Writing answer..." : "Generate answer"}
+        </button>
+
+        {answer && (
+          <>
+            <label htmlFor="company-answer">Generated answer (editable)</label>
+            <textarea
+              id="company-answer"
+              className="cover-letter-text"
+              rows={8}
+              maxLength={12000}
+              value={answer}
+              onChange={(event) => setAnswer(event.target.value)}
+            />
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => copyText(answer, "Answer copied to the clipboard.")}
+            >
+              <Copy size={16} aria-hidden="true" /> Copy answer
+            </button>
+          </>
+        )}
+
+        {answers.length > 0 && (
+          <>
+            <h4>Saved answers</h4>
+            <ul className="qa-list">
+              {answers.map((item) => (
+                <li key={item._id} className="qa-item">
+                  <strong>{item.question}</strong>
+                  <p>{item.answer}</p>
+                  <div className="cover-actions">
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => copyText(item.answer, "Answer copied to the clipboard.")}
+                    >
+                      <Copy size={15} aria-hidden="true" /> Copy
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => deleteAnswer(item._id)}
+                    >
+                      <Trash2 size={15} aria-hidden="true" /> Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </form>
+
+      <section className="company-section">
+        <h3>Interview prep</h3>
+        <p>
+          Generates likely questions from the company info, job description,
+          and background above. Treat them as practice prompts, not guaranteed
+          questions.
+        </p>
+
+        <button
+          type="button"
+          onClick={generateInterview}
+          disabled={generatingInterview || !company.trim()}
+        >
+          {generatingInterview
+            ? "Generating questions..."
+            : "Generate interview questions"}
+        </button>
+
+        {interviewQuestions.length > 0 && (
+          <>
+            <p className="fit-explainer-note">
+              Generated {formatDate(interview?.generatedAt)} · Model:{" "}
+              {interview?.model || "unknown"}
+            </p>
+            <ol className="interview-list">
+              {interviewQuestions.map((item, index) => (
+                <li key={`${index}-${item}`}>{item}</li>
+              ))}
+            </ol>
+            <div className="cover-actions">
+              <button type="button" onClick={printInterview}>
+                <Printer size={16} aria-hidden="true" /> Print questions
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() =>
+                  copyText(
+                    interviewQuestions
+                      .map((item, index) => `${index + 1}. ${item}`)
+                      .join("\n"),
+                    "Interview questions copied to the clipboard."
+                  )
+                }
+              >
+                <Copy size={16} aria-hidden="true" /> Copy questions
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+    </section>
+  );
+}

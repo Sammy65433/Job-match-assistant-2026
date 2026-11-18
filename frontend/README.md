@@ -14,6 +14,7 @@ The app opens on a dedicated sign-in screen. Users can create an email/password 
 - **Preview a pasted job:** Enter a job found elsewhere and its required skills for a screening estimate.
 - **Resume evidence:** Enter editable resume text and manually reviewed requirements for phrase checks.
 - **Cover letter:** Paste a company/job description, generate a tailored letter with Gemini, edit it, copy or download it, and reopen saved drafts.
+- **Company & interviews:** Save company notes and job details, generate grounded answers to application questions, generate likely interview questions, and print a clean question sheet.
 - **Saved jobs:** Read saved listings, expand descriptions, open application links, check limited keyword overlap, explain the fit, write a cover letter, and manually update application status.
 
 These tabs switch views in `App.jsx`; they are not separate browser URLs.
@@ -27,6 +28,12 @@ Software, data, AI engineering, and AI solutions listings use the backend's remo
 ## Other job boards (no API)
 
 The **Find jobs** tab also has a **Search other job boards** section. It builds ordinary search URLs for LinkedIn, Indeed, ZipRecruiter, Glassdoor, Lensa, Dice, Monster, and Google Jobs from editable keywords and the current work type/area. The URLs are constructed client-side with `new URL()` in `src/externalBoards.js`; each link opens in a new tab with `rel="noopener noreferrer"`. Nothing is scraped, no API key is used, and no listings are imported or scored from these boards. Lensa has no reliable keyword/location URL, so its card opens the site and offers a **Copy search terms** button instead. Applications are completed manually on each board.
+
+## Company & interviews
+
+The **Company & interviews** tab stores a company profile on the signed-in account: company name, website, user-entered research notes, job title, job description, generated application answers, and generated interview questions. The applicant background text comes from the editable **Your background / resume text** field for the selected career track.
+
+Gemini receives only those user-entered fields. The app does not look up the company, scrape a careers page, or add facts that are not in the entered text. Generated answers are saved as editable records under the company and can be copied or deleted. Interview questions are practice prompts only; **Print questions** opens a clean, printer-friendly frame with the company name and the generated list.
 
 ## Run locally
 
@@ -46,13 +53,13 @@ VITE_GOOGLE_CLIENT_ID=your_google_web_client_id
 
 For the deployed Static Site, configure `VITE_API_URL` with the deployed backend origin and `VITE_GOOGLE_CLIENT_ID` with the Google Web client ID. Vite embeds these values in the public build. **Never put MongoDB credentials, the Adzuna key, a Google client secret, or `JOB_AUTH_SECRET` in `VITE_` variables.**
 
-Cover letters and fit explanations also need `GEMINI_API_KEY` in the backend environment. The key is used only by the Express server and must never be added to a `VITE_` variable.
+Cover letters, fit explanations, company answers, and interview questions need `GEMINI_API_KEY` in the backend environment. The key is used only by the Express server and must never be added to a `VITE_` variable.
 
 ## Main source files
 
 | File | Purpose |
 | --- | --- |
-| `src/App.jsx` | Signed-in tabs, search state, saved jobs, and authenticated requests |
+| `src/App.jsx` | Signed-in tabs, search state, company profiles, saved jobs, and authenticated requests |
 | `src/LoginPage.jsx` | Dedicated sign-in screen |
 | `src/JobAuth.jsx` | Email/password and Google sign-in controls |
 | `src/api.js` | Frontend API requests and app-token header |
@@ -65,7 +72,9 @@ Cover letters and fit explanations also need `GEMINI_API_KEY` in the backend env
 | `src/ResumeComparison.jsx` | Manual resume phrase checks |
 | `src/ResumeJobCheck.jsx` | Keyword overlap for saved jobs |
 | `src/components/CoverLetterView.jsx` | Gemini cover-letter form, editor, drafts, copy, download, and print |
+| `src/components/CompanyView.jsx` | Saved company profiles, application Q&A, interview prep, and print view |
 | `src/components/FitExplainer.jsx` | Gemini plain-language fit and gap explanation |
+| `src/profileDefaults.js` | Shared editable contact defaults for cover letters and company answers |
 | `src/resumeStarters.js` | Shared starter background text per career track |
 | `src/descriptionText.js` | Convert HTML-formatted job descriptions to displayed plain text |
 | `src/tracks.js` | Career-track labels and editable skill defaults |
@@ -78,5 +87,7 @@ Cover letters and fit explanations also need `GEMINI_API_KEY` in the backend env
 - Real-listing salary filtering is not implemented.
 - Some job sources provide incomplete descriptions. Keyword overlap does not establish qualification.
 - Resume text is sent to the backend for checks, but those checks do not save it as a profile.
-- AI-generated cover letters and fit explanations can be incomplete or wrong. They use only the text provided, but every claim still needs review.
+- AI-generated cover letters, fit explanations, application answers, and interview questions can be incomplete or wrong. They use only the text provided, but every claim still needs review.
 - Cover-letter drafts store the pasted job text and background text used to generate them; delete drafts you no longer need.
+- Company profiles store user-entered notes, job text, generated answers, and generated interview questions on the account; delete a company or individual answer when it is no longer needed.
+- Printed interview questions are practice prompts, not questions guaranteed by the employer.

@@ -10,6 +10,7 @@ import savedJobRoutes from "./routes/savedJobs.js";
 import applyRoutes from "./routes/apply.js";
 import coverLetterRoutes from "./routes/coverLetters.js";
 import fitExplainerRoutes from "./routes/fitExplainer.js";
+import companyRoutes from "./routes/companies.js";
 
 export function createApp() {
   const app = express();
@@ -66,6 +67,7 @@ export function createApp() {
   app.use("/api/resume", resumeRoutes);
   app.use("/api/cover-letters", coverLetterRoutes);
   app.use("/api/fit-explainer", fitExplainerRoutes);
+  app.use("/api/companies", companyRoutes);
 
   app.use((error, _req, res, _next) => {
     if (error.message === "Origin not allowed.") {

@@ -792,6 +792,89 @@
   padding: 10px 14px;
 } /* end delete draft */
 
+/* ---------- Company profiles and interview prep ---------- */
+.page .company-view {
+  display: grid;
+  gap: 14px;
+} /* end company view */
+
+.page .company-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+} /* end company heading */
+
+.page .company-heading h3,
+.page .company-section h3,
+.page .company-section h4 {
+  margin: 0;
+  color: #fff;
+} /* end company headings */
+
+.page .company-section {
+  display: grid;
+  gap: 13px;
+  margin: 20px 0;
+  padding: clamp(18px, 3vw, 26px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+} /* end company section card */
+
+.page .company-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+} /* end company list */
+
+.page .qa-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+} /* end saved answers */
+
+.page .qa-item {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--field);
+} /* end answer item */
+
+.page .qa-item strong {
+  color: #fff;
+} /* end answer question */
+
+.page .qa-item p {
+  white-space: pre-line;
+} /* end answer text */
+
+.page .interview-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 24px;
+  color: var(--text);
+} /* end interview list */
+
+.page .interview-list li {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--violet);
+  border-radius: 10px;
+  background: rgba(167, 139, 250, 0.07);
+} /* end interview question */
+
 /* ---------- AI fit explainer ---------- */
 .page .fit-explainer {
   display: grid;

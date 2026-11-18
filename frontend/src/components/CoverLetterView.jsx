@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FileText, PenLine, Trash2 } from "lucide-react";
 
+import { DEFAULT_PROFILE } from "../profileDefaults.js";
 import { starterTextFor } from "../resumeStarters.js";
 
 const MAX_COMPANY_LENGTH = 150;
@@ -16,15 +17,6 @@ const TONES = [
   ["enthusiastic", "Enthusiastic"],
   ["direct", "Direct"]
 ];
-
-const DEFAULT_PROFILE = {
-  fullName: "Samuel Jacquet",
-  email: "SamuelRJacquet@gmail.com",
-  phone: "213-817-4982",
-  location: "Los Angeles, CA / Newark, NJ",
-  links:
-    "linkedin.com/in/samuel-jacquet-29180549 | github.com/Sammy65433"
-};
 
 function escapeHtml(value) {
   return String(value)
