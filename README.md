@@ -84,7 +84,7 @@ GEMINI_API_KEY=your_gemini_key
 # GEMINI_MODEL=gemini-3.5-flash
 ```
 
-Never put the key in a `VITE_` variable. The default model is `gemini-3.5-flash`; the app disables Gemini thinking output so letters come back within the token budget. AI output can be wrong or overstated, so review every letter and explanation before using it. Do not let the model claim experience, degrees, or skills that are not in the entered profile.
+Never put the key in a `VITE_` variable. The default model is `gemini-3.5-flash-lite`; larger Gemini 3.x Flash tiers can return 503 or stall, and disabling their thinking output makes requests hang, so the client uses the lighter tier with default thinking settings. Override it with `GEMINI_MODEL` only if you have verified the replacement. AI output can be wrong or overstated, so review every letter and explanation before using it. Do not let the model claim experience, degrees, or skills that are not in the entered profile.
 
 ## Run locally
 

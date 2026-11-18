@@ -145,7 +145,7 @@ router.post("/", generateLimiter, async (req, res) => {
     console.error("Cover letter generation failed:", error.message);
     return res.status(error.status || 500).json({
       error:
-        error.status && error.status < 500
+        error.name === "GeminiError" || (error.status && error.status < 500)
           ? error.message
           : "Could not generate a cover letter."
     });

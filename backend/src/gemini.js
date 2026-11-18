@@ -5,6 +5,13 @@
 const GEMINI_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
 
+// Gemini 3.x Flash can hang when thinking is disabled, and the larger Flash
+// tiers often return 503 under load. Flash-Lite responds reliably for these
+// short text-generation tasks, so it is the default and the fallback.
+const DEFAULT_MODEL = "gemini-3.5-flash-lite";
+const FALLBACK_MODELS = ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"];
+const MAX_ATTEMPT_MS = 12000;
+
 export class GeminiError extends Error {
   constructor(message, status) {
     super(message);
@@ -14,8 +21,13 @@ export class GeminiError extends Error {
 } // end GeminiError
 
 export function geminiModel() {
-  return process.env.GEMINI_MODEL || "gemini-3.5-flash";
+  return process.env.GEMINI_MODEL || DEFAULT_MODEL;
 } // end geminiModel
+
+function modelsToTry() {
+  const primary = geminiModel();
+  return [primary, ...FALLBACK_MODELS.filter((model) => model !== primary)];
+} // end modelsToTry
 
 function partsText(data) {
   if (!Array.isArray(data?.candidates?.[0]?.content?.parts)) return "";
@@ -24,6 +36,14 @@ function partsText(data) {
     .map((part) => (typeof part?.text === "string" ? part.text : ""))
     .join("");
 } // end partsText
+
+function requestError(error) {
+  if (error?.name === "TimeoutError") {
+    return new GeminiError("The AI service timed out. Try again.", 504);
+  } // end if timeout
+
+  return new GeminiError("Could not reach the AI service.", 502);
+} // end requestError
 
 export async function generateGeminiText({
   system,
@@ -41,71 +61,85 @@ export async function generateGeminiText({
     );
   } // end if no key
 
-  const model = geminiModel();
-  const url = `${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent`;
+  const deadline = Date.now() + timeoutMs;
+  let lastError = null;
 
-  let response;
+  for (const model of modelsToTry()) {
+    const remaining = deadline - Date.now();
 
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey
-      },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: system }]
+    if (remaining < 2000) break;
+
+    const url = `${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey
         },
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }]
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: system }]
+          },
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            temperature,
+            maxOutputTokens,
+            topP: 0.9
           }
-        ],
-        generationConfig: {
-          temperature,
-          maxOutputTokens,
-          topP: 0.9,
-          // Gemini 3 models otherwise spend the token budget on thinking and
-          // can return an empty candidate.
-          thinkingConfig: { thinkingBudget: 0 }
-        }
-      }),
-      signal: AbortSignal.timeout(timeoutMs)
-    });
-  } catch (error) {
-    throw new GeminiError(
-      error?.name === "TimeoutError"
-        ? "The AI service timed out. Try again."
-        : "Could not reach the AI service.",
-      error?.name === "TimeoutError" ? 504 : 502
-    );
-  } // end try/catch
+        }),
+        signal: AbortSignal.timeout(Math.min(remaining, MAX_ATTEMPT_MS))
+      });
 
-  if (!response.ok) {
-    throw new GeminiError(
-      response.status === 429
-        ? "The AI service is busy. Try again in a minute."
-        : "The AI service could not complete the request.",
-      response.status === 429 ? 429 : 502
-    );
-  } // end if not ok
+      if (!response.ok) {
+        const busy = response.status === 429 || response.status === 503;
 
-  const data = await response.json();
+        throw new GeminiError(
+          busy
+            ? "The AI service is busy. Try again in a minute."
+            : "The AI service could not complete the request.",
+          busy ? response.status : 502
+        );
+      } // end if not ok
 
-  if (data?.promptFeedback?.blockReason) {
-    throw new GeminiError(
-      "The request was blocked. Remove sensitive details and try again.",
-      422
-    );
-  } // end if blocked
+      let data;
 
-  const text = partsText(data).trim();
+      try {
+        data = await response.json();
+      } catch {
+        throw new GeminiError("The AI service returned an invalid response.", 502);
+      } // end try/catch
 
-  if (!text) {
-    throw new GeminiError("The AI service returned an empty response.", 502);
-  } // end if empty
+      if (data?.promptFeedback?.blockReason) {
+        throw new GeminiError(
+          "The request was blocked. Remove sensitive details and try again.",
+          422
+        );
+      } // end if blocked
 
-  return { text, model };
+      const text = partsText(data).trim();
+
+      if (!text) {
+        throw new GeminiError("The AI service returned an empty response.", 502);
+      } // end if empty
+
+      return { text, model };
+    } catch (error) {
+      const failure = error instanceof GeminiError ? error : requestError(error);
+
+      // Authentication and safety blocks will not improve on another model.
+      if ([401, 403, 422].includes(failure.status)) throw failure;
+
+      lastError = failure;
+    } // end try/catch
+  } // end for
+
+  throw lastError ??
+    new GeminiError("The AI service could not complete the request.", 502);
 } // end generateGeminiText

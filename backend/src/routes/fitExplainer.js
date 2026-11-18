@@ -102,7 +102,7 @@ router.post("/", explainLimiter, async (req, res) => {
     console.error("Fit explanation failed:", error.message);
     return res.status(error.status || 500).json({
       error:
-        error.status && error.status < 500
+        error.name === "GeminiError" || (error.status && error.status < 500)
           ? error.message
           : "Could not explain this fit."
     });
